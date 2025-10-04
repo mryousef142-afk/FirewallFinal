@@ -1,0 +1,89 @@
+﻿.card {
+  border-radius: 20px;
+  background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 0;
+}
+
+.cardExpired {
+  box-shadow: 0 8px 28px rgba(255, 59, 48, 0.15);
+}
+
+.cardRemoved {
+  opacity: 0.85;
+  background: var(--tg-theme-section-bg-color, #e9ecef);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: right;
+  flex: 1;
+  gap: 4px;
+}
+
+.title {
+  margin: 0;
+  color: var(--tg-theme-text-color, #111);
+}
+
+.meta {
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.status {
+  margin: 0;
+  color: var(--tg-theme-text-color, #1c1c1f);
+}
+
+.statusNeutral {
+  color: var(--tg-theme-text-color, #1c1c1f);
+}
+
+.statusPositive {
+  color: var(--tg-theme-link-color, #0a84ff);
+}
+
+.statusNegative {
+  color: var(--tg-theme-destructive-text-color, #ff3b30);
+}
+
+.statusRemoved {
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+.renewButton {
+  white-space: nowrap;
+}
+
+.manageButton {
+  margin-top: 4px;
+}
+
+.removalHint {
+  margin-top: 8px;
+  color: var(--tg-theme-hint-color, #6c7883);
+  text-align: right;
+}

@@ -1,0 +1,194 @@
+﻿.page {
+  min-height: 100vh;
+  background: var(--tg-theme-secondary-bg-color, #f4f6fa);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--tg-theme-bg-color, #ffffff);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  z-index: 5;
+}
+
+.headerLeft,
+.headerRight {
+  display: flex;
+  align-items: center;
+}
+
+.headerLeft {
+  justify-content: flex-start;
+}
+
+.headerRight {
+  justify-content: flex-end;
+}
+
+.headerCenter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.headerTitles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.groupName {
+  margin: 0;
+  color: var(--tg-theme-text-color, #1c1c1f);
+}
+
+.groupSubtitle {
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+.burger {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.burger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--tg-theme-text-color, #1c1c1f);
+  border-radius: 999px;
+}
+
+.body {
+  flex: 1;
+  padding: 24px 16px 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loadingState {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tg-theme-secondary-bg-color, #f4f6fa);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  border-radius: 20px;
+  background: var(--tg-theme-bg-color, #ffffff);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cardDanger {
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.18) 0%, rgba(248, 113, 113, 0.08) 100%);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cardTitle {
+  margin: 0;
+  color: var(--tg-theme-text-color, #1c1c1f);
+}
+
+.cardHint {
+  margin-top: 4px;
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.timeLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.summaryText {
+  font-weight: 600;
+  color: var(--tg-theme-text-color, #1c1c1f);
+}
+
+.summaryInactive {
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+.summaryDanger {
+  color: #b91c1c;
+}
+
+.summaryActive {
+  color: var(--tg-theme-link-color, #0a84ff);
+}
+
+.errorText {
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.saveBar {
+  position: sticky;
+  bottom: 0;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(244, 246, 250, 0) 0%, rgba(244, 246, 250, 0.9) 40%, rgba(244, 246, 250, 1) 100%);
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+  display: flex;
+  justify-content: center;
+  z-index: 6;
+}
+
+.snackbar {
+  position: fixed;
+  inset-inline: 16px;
+  bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .body {
+    padding: 32px 40px 140px;
+  }
+}

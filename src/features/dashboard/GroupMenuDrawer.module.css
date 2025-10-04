@@ -1,0 +1,80 @@
+﻿.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+  z-index: 40;
+}
+
+.overlayVisible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: -320px;
+  width: 280px;
+  background: var(--tg-theme-bg-color, #ffffff);
+  box-shadow: -12px 0 30px rgba(15, 23, 42, 0.12);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: right 0.3s ease;
+  z-index: 41;
+}
+
+.drawerVisible {
+  right: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-inline-end: 4px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--tg-theme-text-color, #1c1c1f);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.item:hover {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.itemActive {
+  background: rgba(59, 130, 246, 0.18);
+  color: #1d4ed8;
+}
+
+.itemIcon {
+  font-size: 20px;
+}
+
+.itemLabel {
+  flex: 1;
+  text-align: right;
+}

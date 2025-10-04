@@ -1,0 +1,211 @@
+﻿.page {
+  min-height: 100vh;
+  background: var(--tg-theme-secondary-bg-color, #f4f6fa);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section {
+  border-radius: 20px;
+  background: var(--tg-theme-bg-color, #ffffff);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--tg-theme-text-color, #1c1c1f);
+}
+
+.groupsList {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.groupCard {
+  min-width: 200px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.groupCardActive {
+  border-color: var(--tg-theme-link-color, #0a84ff);
+  box-shadow: 0 8px 24px rgba(10, 132, 255, 0.18);
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.groupInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.groupActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.badgeActive {
+  background: #16a34a;
+}
+
+.badgeExpiring {
+  background: #d97706;
+}
+
+.badgeExpired {
+  background: #dc2626;
+}
+
+.planGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.planCard {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(148, 163, 184, 0.08);
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.planCardSelected {
+  border-color: var(--tg-theme-link-color, #0a84ff);
+  background: rgba(10, 132, 255, 0.08);
+  box-shadow: 0 8px 24px rgba(10, 132, 255, 0.18);
+}
+
+.planPrice {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color, #1c1c1f);
+}
+
+.planDays {
+  font-size: 14px;
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+.summaryGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.summaryCard {
+  border-radius: 16px;
+  background: rgba(148, 163, 184, 0.12);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summaryLabel {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+.summaryValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color, #1c1c1f);
+}
+
+.summaryActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.actionsRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.giftSearch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.searchResults {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.searchResult {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.95);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.searchResultSelected {
+  border-color: var(--tg-theme-link-color, #0a84ff);
+  box-shadow: 0 6px 20px rgba(10, 132, 255, 0.15);
+}
+
+.secondaryText {
+  font-size: 13px;
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+.scrollHint {
+  font-size: 12px;
+  color: var(--tg-theme-hint-color, #6c7883);
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding: 24px 40px;
+  }
+}
