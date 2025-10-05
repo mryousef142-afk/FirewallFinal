@@ -9,10 +9,10 @@ interface OwnerProfile {
 
 function buildDisplayName(user?: User): string {
   if (!user) {
-    return "\u06A9\u0627\u0631\u0628\u0631 \u0646\u0627\u0634\u0646\u0627\u0633";
+    return "Unknown user";
   }
   const parts = [user.first_name, user.last_name].filter(Boolean);
-  return parts.length ? parts.join(" ") : user.username ?? "\u06A9\u0627\u0631\u0628\u0631";
+  return parts.length ? parts.join(" ") : user.username ?? "User";
 }
 
 export function useOwnerProfile(): OwnerProfile {

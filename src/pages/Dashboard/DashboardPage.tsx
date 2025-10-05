@@ -13,12 +13,12 @@ import { useDashboardData } from "@/features/dashboard/useDashboardData.ts";
 import { useOwnerProfile } from "@/features/dashboard/useOwnerProfile.ts";
 import { ProfileHeader } from "@/features/dashboard/ProfileHeader.tsx";
 import type { ManagedGroup } from "@/features/dashboard/types.ts";
-import { toPersianDigits } from "@/utils/format.ts";
+import { formatNumber } from "@/utils/format.ts";
 
 import styles from "./DashboardPage.module.css";
 
 function normalize(text: string) {
-  return text.toLocaleLowerCase("fa-IR");
+  return text.toLowerCase();
 }
 
 export function DashboardPage() {
@@ -50,25 +50,21 @@ export function DashboardPage() {
 
   return (
     <Page back={false}>
-      <div className={styles.page} dir="rtl">
+      <div className={styles.page} dir="ltr">
         <ProfileHeader displayName={displayName} username={username} avatarUrl={avatarUrl} />
 
         <section className={styles.summary}>
           <Text weight="2" className={styles.summaryItem}>
-            {"\u06AF\u0631\u0648\u0647 \u0647\u0627: "}
-            {toPersianDigits(summary.total)}
+            Groups: {formatNumber(summary.total)}
           </Text>
           <Text weight="2" className={styles.summaryItemPositive}>
-            {"\u0641\u0639\u0627\u0644: "}
-            {toPersianDigits(summary.active)}
+            Active: {formatNumber(summary.active)}
           </Text>
           <Text weight="2" className={styles.summaryItemWarning}>
-            {"\u0645\u0646\u062A\u0647\u06CC \u0634\u062F\u0647: "}
-            {toPersianDigits(summary.expired)}
+            Expired: {formatNumber(summary.expired)}
           </Text>
           <Text weight="2" className={styles.summaryItemMuted}>
-            {"\u062E\u0627\u0631\u062C: "}
-            {toPersianDigits(summary.removed)}
+            Removed: {formatNumber(summary.removed)}
           </Text>
         </section>
 
@@ -76,21 +72,21 @@ export function DashboardPage() {
           <div className={styles.searchWrapper}>
             <Input
               className={styles.searchInput}
-              placeholder="\u062C\u0633\u062A\u062C\u0648 \u062F\u0631 \u0646\u0627\u0645 \u06AF\u0631\u0648\u0647"
+              placeholder="Search by group name"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              dir="rtl"
+              dir="ltr"
             />
           </div>
         )}
 
         {error && (
           <Placeholder
-            header="\u062E\u0637\u0627 \u062F\u0631 \u0628\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06CC"
+            header="Failed to refresh"
             description={error.message}
           >
             <Button mode="filled" onClick={refresh}>
-              {"\u0628\u0627\u0632\u06AF\u0631\u062F\u0627\u0646\u06CC"}
+              Retry
             </Button>
           </Placeholder>
         )}
@@ -111,8 +107,8 @@ export function DashboardPage() {
 
             {!loading && noMatches && (
               <Placeholder
-                header="\u06AF\u0631\u0648\u0647\u06CC \u06CC\u0627\u0641\u062A \u0646\u0634\u062F"
-                description="\u0644\u0637\u0641\u0627 \u0646\u0648\u0634\u062A\u0627\u0631 \u062C\u0633\u062A\u062C\u0648 \u0631\u0627 \u062A\u063A\u06CC\u0631 \u062F\u0647\u06CC\u062F."
+                header="No groups found"
+                description="Try refining your search keywords."
               />
             )}
 

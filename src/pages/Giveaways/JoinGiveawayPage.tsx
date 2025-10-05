@@ -7,7 +7,7 @@ import { classNames } from "@/css/classnames.ts";
 import { fetchGiveawayDetail, joinGiveaway } from "@/features/dashboard/api.ts";
 import type { GiveawayDetail } from "@/features/dashboard/types.ts";
 import { useOwnerProfile } from "@/features/dashboard/useOwnerProfile.ts";
-import { toPersianDigits } from "@/utils/format.ts";
+import { formatNumber, toPersianDigits } from "@/utils/format.ts";
 
 import styles from "./GiveawayPages.module.css";
 
@@ -15,12 +15,56 @@ type RouteParams = {
   giveawayId: string;
 };
 
+const TEXT = {
+  loading: {
+    header: "Loading",
+    description: "Please wait a moment.",
+  },
+  error: {
+    header: "Giveaway not found",
+    description: "No information available.",
+    action: "Back",
+  },
+  header: {
+    title: "Gifts giveaway",
+  },
+  reward: (detail: GiveawayDetail) =>
+    `Reward: ${toPersianDigits(detail.prize.days)} day access for ${formatNumber(detail.winnersCount)} winner(s) — ${formatNumber(detail.prize.pricePerWinner)} stars each`,
+  stats: {
+    participants: (count: number) => `Participants: ${formatNumber(count)}`,
+    winners: (count: number) => `Winners: ${formatNumber(count)}`,
+    ends: (value: string) =>
+      `Ends: ${new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))}`,
+  },
+  requirements: {
+    title: "Participation requirements",
+    host: "Subscribe to the host channel",
+    partner: "Visit the partner channel",
+    open: "Open",
+    premium: {
+      title: "Telegram Premium",
+      ok: "Premium status confirmed.",
+      missing: "Telegram Premium is required to participate.",
+    },
+  },
+  actions: {
+    title: "Join the giveaway",
+    already: "You have already joined this giveaway.",
+    premiumBlocked: "This giveaway is only available to Telegram Premium users.",
+    join: "Join the giveaway",
+    joined: "Already joined",
+    submitting: "Submitting...",
+    success: "Your participation has been recorded.",
+  },
+};
+
 function formatTime(seconds: number): string {
   const safe = Math.max(0, seconds);
   const hours = Math.floor(safe / 3600);
   const minutes = Math.floor((safe % 3600) / 60);
   const secs = safe % 60;
-  return `${toPersianDigits(hours)}:${toPersianDigits(minutes.toString().padStart(2, "0"))}:${toPersianDigits(secs.toString().padStart(2, "0"))}`;
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  return `${toPersianDigits(pad(hours))}:${toPersianDigits(pad(minutes))}:${toPersianDigits(pad(secs))}`;
 }
 
 function buildChannelLink(value: string): string {
@@ -123,7 +167,7 @@ export function JoinGiveawayPage() {
       setJoining(true);
       const updated = await joinGiveaway(giveawayId);
       setDetail(updated);
-      setSnackbar("با موفقیت به گیواوی پیوستید");
+      setSnackbar(TEXT.actions.success);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setSnackbar(message);
@@ -135,8 +179,8 @@ export function JoinGiveawayPage() {
   if (loading) {
     return (
       <Page>
-        <div className={styles.page} dir="rtl">
-          <Placeholder header="در حال بارگذاری" description="لطفاً کمی صبر کنید." />
+        <div className={styles.page} dir="ltr">
+          <Placeholder header={TEXT.loading.header} description={TEXT.loading.description} />
         </div>
       </Page>
     );
@@ -145,9 +189,11 @@ export function JoinGiveawayPage() {
   if (error || !detail) {
     return (
       <Page>
-        <div className={styles.page} dir="rtl">
-          <Placeholder header="گیواوی یافت نشد" description={error?.message ?? "اطلاعات در دسترس نیست."}>
-            <Button mode="filled" onClick={() => navigate("/giveaways")}>بازگشت</Button>
+        <div className={styles.page} dir="ltr">
+          <Placeholder header={TEXT.error.header} description={error?.message ?? TEXT.error.description}>
+            <Button mode="filled" onClick={() => navigate("/giveaways")}>
+              {TEXT.error.action}
+            </Button>
           </Placeholder>
         </div>
       </Page>
@@ -159,48 +205,50 @@ export function JoinGiveawayPage() {
 
   return (
     <Page>
-      <div className={styles.page} dir="rtl">
+      <div className={styles.page} dir="ltr">
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <Title level="3" className={styles.sectionTitle}>
-              Gifts Giveaway
+              {TEXT.header.title}
             </Title>
             <span className={classNames(styles.countdown)}>{formatTime(countdown)}</span>
           </div>
           <Text weight="2">{detail.title}</Text>
-          <Text className={styles.note}>
-            جایزه: اعتبار {toPersianDigits(detail.prize.days)} روزه برای {toPersianDigits(detail.winnersCount)} نفر (هر نفر {toPersianDigits(detail.prize.pricePerWinner)} ⭐️)
-          </Text>
+          <Text className={styles.note}>{TEXT.reward(detail)}</Text>
           <div className={styles.tagRow}>
-            <Text>شرکت‌کنندگان: {toPersianDigits(detail.participants)}</Text>
-            <Text>برندگان: {toPersianDigits(detail.winnersCount)}</Text>
-            <Text>پایان: {new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(detail.endsAt))}</Text>
+            <Text>{TEXT.stats.participants(detail.participants)}</Text>
+            <Text>{TEXT.stats.winners(detail.winnersCount)}</Text>
+            <Text>{TEXT.stats.ends(detail.endsAt)}</Text>
           </div>
         </section>
 
         <section className={styles.section}>
           <Title level="3" className={styles.sectionTitle}>
-            شرایط شرکت
+            {TEXT.requirements.title}
           </Title>
           <div className={styles.requirementsList}>
             <div className={styles.requirementItem}>
               <div>
-                <Text weight="2">عضویت در کانال</Text>
+                <Text weight="2">{TEXT.requirements.host}</Text>
                 <Text className={styles.note}>{detail.requirements.targetChannel}</Text>
               </div>
               <div className={styles.inline}>
-                <Button mode="plain" size="s" onClick={() => window.open(mainChannelLink, "_blank")}>مشاهده</Button>
+                <Button mode="plain" size="s" onClick={() => window.open(mainChannelLink, "_blank")}>
+                  {TEXT.requirements.open}
+                </Button>
                 <Switch checked={subscribed} onChange={(event) => setSubscribed(event.target.checked)} />
               </div>
             </div>
             {detail.requirements.extraChannel && (
               <div className={styles.requirementItem}>
                 <div>
-                  <Text weight="2">بازدید از لینک پشتیبان</Text>
+                  <Text weight="2">{TEXT.requirements.partner}</Text>
                   <Text className={styles.note}>{detail.requirements.extraChannel}</Text>
                 </div>
                 <div className={styles.inline}>
-                  <Button mode="plain" size="s" onClick={() => window.open(extraChannelLink, "_blank")}>باز کردن</Button>
+                  <Button mode="plain" size="s" onClick={() => window.open(extraChannelLink, "_blank")}>
+                    {TEXT.requirements.open}
+                  </Button>
                   <Switch checked={extraVisited} onChange={(event) => setExtraVisited(event.target.checked)} />
                 </div>
               </div>
@@ -208,9 +256,9 @@ export function JoinGiveawayPage() {
             {detail.requirements.premiumOnly && (
               <div className={styles.requirementItem}>
                 <div>
-                  <Text weight="2">حساب پریمیوم تلگرام</Text>
+                  <Text weight="2">{TEXT.requirements.premium.title}</Text>
                   <Text className={styles.note}>
-                    {hasPremium ? "حساب پریمیوم تایید شد." : "برای شرکت باید پریمیوم باشید."}
+                    {hasPremium ? TEXT.requirements.premium.ok : TEXT.requirements.premium.missing}
                   </Text>
                 </div>
               </div>
@@ -220,12 +268,10 @@ export function JoinGiveawayPage() {
 
         <section className={styles.section}>
           <Title level="3" className={styles.sectionTitle}>
-            شرکت در گیواوی
+            {TEXT.actions.title}
           </Title>
-          {alreadyJoined && <Text className={styles.note}>شما قبلاً در این گیواوی شرکت کرده‌اید.</Text>}
-          {premiumBlocked && (
-            <Text className={styles.note}>این گیواوی فقط برای کاربران پریمیوم فعال است.</Text>
-          )}
+          {alreadyJoined && <Text className={styles.note}>{TEXT.actions.already}</Text>}
+          {premiumBlocked && <Text className={styles.note}>{TEXT.actions.premiumBlocked}</Text>}
           <Button
             mode="filled"
             size="m"
@@ -233,7 +279,7 @@ export function JoinGiveawayPage() {
             disabled={!canJoin || joining}
             onClick={handleJoin}
           >
-            {joining ? "در حال ثبت..." : alreadyJoined ? "شرکت شده" : "Join Giveaway"}
+            {joining ? TEXT.actions.submitting : alreadyJoined ? TEXT.actions.joined : TEXT.actions.join}
           </Button>
         </section>
 

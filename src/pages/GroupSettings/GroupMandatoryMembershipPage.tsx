@@ -29,52 +29,52 @@ type LocationState = {
 };
 
 const TEXT = {
-  pageSubtitle: "Ø¹Ø¶ÙˆÛŒØªâ€ŒÙ‡Ø§ÛŒ Ø§Ø¬Ø¨Ø§Ø±ÛŒ",
-  loading: "Ø¯Ø± Ø­Ø§Ù„ Ø¨Ø§Ø±Ú¯Ø°Ø§Ø±ÛŒ ØªÙ†Ø¸ÛŒÙ…Ø§Øª...",
-  errorHeader: "Ø®Ø·Ø§ Ø¯Ø± Ø¯Ø±ÛŒØ§ÙØª Ø§Ø·Ù„Ø§Ø¹Ø§Øª",
-  back: "Ø¨Ø§Ø²Ú¯Ø´Øª",
-  unavailableHeader: "ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ø¯Ø± Ø¯Ø³ØªØ±Ø³ Ù†ÛŒØ³Øª",
-  notice:
-    "Ø¨Ø±Ø§ÛŒ Ø±Ø´Ø¯ Ú¯Ø±ÙˆÙ‡ Ùˆ Ú©Ø§Ù†Ø§Ù„â€ŒÙ‡Ø§ÛŒ Ù…Ø±ØªØ¨Ø· Ù…ÛŒâ€ŒØªÙˆØ§Ù†ÛŒØ¯ Ø´Ø±Ø· Ø¯Ø¹ÙˆØª Ø§Ø¹Ø¶Ø§ ÛŒØ§ Ø¹Ø¶ÙˆÛŒØª Ø¯Ø± Ú©Ø§Ù†Ø§Ù„â€ŒÙ‡Ø§ Ø±Ø§ ÙØ¹Ø§Ù„ Ú©Ù†ÛŒØ¯. Ø¨Ø§ ÙØ¹Ø§Ù„ Ø¨ÙˆØ¯Ù† Ù‡Ø± Ù‚Ø§Ù†ÙˆÙ†ØŒ Ø§Ø¹Ø¶Ø§ ØªØ§ ØªÚ©Ù…ÛŒÙ„ Ø´Ø±Ø· Ø§Ø¬Ø§Ø²Ù‡ Ø§Ø±Ø³Ø§Ù„ Ù¾ÛŒØ§Ù… Ù†Ø¯Ø§Ø±Ù†Ø¯.",
-  forcedTitle: "Ø§Ø¯ Ø§Ø¬Ø¨Ø§Ø±ÛŒ",
-  forcedHint: "???? ?????? ??? ?? ????? ???? ????? ????? ????? ?? ?? ???? ???? ????.",
-  forcedTooltip: "Ø§Ú¯Ø± Ù…Ù‚Ø¯Ø§Ø± ØµÙØ± Ø¨Ø§Ø´Ø¯ØŒ Ø´Ø±Ø· Ø¯Ø¹ÙˆØª ØºÛŒØ±ÙØ¹Ø§Ù„ Ù…ÛŒâ€ŒØ´ÙˆØ¯.",
-  forcedLabel: "ØªØ¹Ø¯Ø§Ø¯ Ø¯Ø¹ÙˆØª Ø§Ø¬Ø¨Ø§Ø±ÛŒ",
-  resetTitle: "Ø¨Ø§Ø²Ù‡ Ø²Ù…Ø§Ù†ÛŒ Ø§Ø¯ Ø§Ø¬Ø¨Ø§Ø±ÛŒ (Ø±ÙˆØ²)",
-  resetHint: "Ù¾Ø³ Ø§Ø² Ø§ØªÙ…Ø§Ù… Ø§ÛŒÙ† Ø¨Ø§Ø²Ù‡ Ø¯Ø¹ÙˆØªâ€ŒÙ‡Ø§ÛŒ Ù‡Ø± Ø¹Ø¶Ùˆ Ø±ÛŒØ³Øª Ù…ÛŒâ€ŒØ´ÙˆØ¯. Ù…Ù‚Ø¯Ø§Ø± ØµÙØ± ÛŒØ¹Ù†ÛŒ Ø¨Ø¯ÙˆÙ† Ø¨Ø§Ø²Ù‡.",
-  resetTooltip: "?? ???? ??????? ???? ?? ??????? ??? ???? ?????? ????? ??????.",
-  resetLabel: "ØªØ¹Ø¯Ø§Ø¯ Ø±ÙˆØ²",
-  channelsTitle: "Ø¹Ø¶ÙˆÛŒØª Ø§Ø¬Ø¨Ø§Ø±ÛŒ Ø¯Ø± Ú©Ø§Ù†Ø§Ù„",
-  channelsHint: "Ú©Ø§Ø±Ø¨Ø±Ø§Ù† Ø¨Ø§ÛŒØ¯ Ø¯Ø± Ú©Ø§Ù†Ø§Ù„â€ŒÙ‡Ø§ÛŒ Ù…Ø´Ø®Øµ Ø¹Ø¶Ùˆ Ø´ÙˆÙ†Ø¯ ØªØ§ Ø¨ØªÙˆØ§Ù†Ù†Ø¯ Ù¾ÛŒØ§Ù… Ø¨Ø¯Ù‡Ù†Ø¯.",
-  channelsTooltip: "Ù†Ø§Ù… Ú©Ø§Ø±Ø¨Ø±ÛŒ Ú©Ø§Ù†Ø§Ù„ Ø¨Ø§ÛŒØ¯ Ø¨Ø§ @ Ø´Ø±ÙˆØ¹ Ø´ÙˆØ¯ Ùˆ Bot Ø­ØªÙ…Ø§Ù‹ Ø¨Ø§ÛŒØ¯ Admin Ø¨Ø§Ø´Ø¯.",
-  channelsPlaceholder: "@channel_one\n@channel_two",
+  pageSubtitle: "Mandatory membership",
+  loading: "Loading settings...",
+  errorHeader: "Unable to load information",
+  back: "Back",
+  unavailableHeader: "Settings are currently unavailable",
+  notice: "Require members to invite newcomers or join specific channels before they can send messages.",
+  forcedTitle: "Invite requirement",
+  forcedHint: "Members must invite a set number of new users before they can chat.",
+  forcedTooltip: "Enter 0 to disable the invite requirement.",
+  forcedLabel: "Required invitations per member",
+  resetTitle: "Invite counter reset (days)",
+  resetHint: "Automatically reset the invite counter after the selected number of days.",
+  resetTooltip: "Set to 0 to keep the counter without automatic resets.",
+  resetLabel: "Reset after (days)",
+  channelsTitle: "Required channels",
+  channelsHint: "Members must join every channel in the list before they can chat.",
+  channelsTooltip: "Add one public @username per line. For private channels the bot must be an administrator.",
+  channelsPlaceholder: `@channel_one
+@channel_two`,
   channelsSummary: (channels: string[]) =>
     channels.length > 0
-      ? `????? ?? ????????? ${channels.join(", ")} ?????? ???.`
-      : "????? ?????? ?? ????? ??????? ???.",
+      ? `Members must join: ${channels.join(", ")}.`
+      : "No mandatory channels configured.",
   forcedSummary: (count: number, reset: number) => {
     if (count <= 0) {
-      return "??? ???? ???? ????.";
+      return "Inviting new members is not required.";
     }
     if (reset <= 0) {
-      return `?? ??? ???? ${count} ??? ?? ???? ???.`;
+      return `Members must invite ${count} new member(s); the counter never resets automatically.`;
     }
-    return `?? ??? ???? ${count} ??? ?? ???? ??? (???? ?? ${reset} ???).`;
+    return `Members must invite ${count} new member(s); the counter resets every ${reset} day(s).`;
   },
   resetSummary: (count: number, reset: number) => {
     if (count <= 0) {
-      return "?? ??????? ???? ?? ??????? ???? ????? ????? ???????.";
+      return "The invite counter stays inactive while the requirement is disabled.";
     }
     if (reset <= 0) {
-      return "????? ???? ???? ??????? (??? ????? ???).";
+      return "The invite counter never resets automatically.";
     }
-    return `????? ???? ?? ${reset} ??? ???? ??????.`;
+    return `The invite counter resets every ${reset} day(s).`;
   },
-  channelsErrorPrefix: "????????? ???????:",
-  save: "Ø°Ø®ÛŒØ±Ù‡ ØªÙ†Ø¸ÛŒÙ…Ø§Øª",
-  saving: "Ø¯Ø± Ø­Ø§Ù„ Ø°Ø®ÛŒØ±Ù‡...",
-  saveSuccess: "??????? ?? ?????? ????? ??.",
-  saveErrorPrefix: "????? ??????? ?? ??? ????? ??: ",
+  channelsErrorPrefix: "Channel validation failed:",
+  save: "Save settings",
+  saving: "Saving...",
+  saveSuccess: "Settings saved successfully.",
+  saveErrorPrefix: "Failed to save settings: ",
 };
 
 const CHANNEL_REGEX = /^@[a-zA-Z0-9_]{5,}$/;
@@ -253,7 +253,7 @@ export function GroupMandatoryMembershipPage() {
 
   if (loading && !settings) {
     return (
-      <div className={styles.loadingState} dir="rtl">
+      <div className={styles.loadingState} dir="ltr">
         <Text weight="2">{TEXT.loading}</Text>
       </div>
     );
@@ -289,7 +289,7 @@ export function GroupMandatoryMembershipPage() {
   const channelsSummaryText = TEXT.channelsSummary(mandatoryChannels);
 
   return (
-    <div className={styles.page} dir="rtl">
+    <div className={styles.page} dir="ltr">
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <Button mode="plain" size="s" onClick={() => navigate(-1)}>

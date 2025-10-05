@@ -5,7 +5,7 @@ import styles from "./GroupCardSkeleton.module.css";
 export function GroupCardSkeleton() {
   return (
     <Card className={styles.card} type="plain">
-      <div className={styles.content} dir="rtl">
+      <div className={styles.content} dir="ltr">
         <div className={styles.topRow}>
           <div className={styles.avatar} />
           <div className={styles.lines}>

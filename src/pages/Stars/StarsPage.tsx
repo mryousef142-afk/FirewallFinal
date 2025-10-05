@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, Button, Input, Placeholder, Snackbar, Text, Title } from "@telegram-apps/telegram-ui";
 
 import { Page } from "@/components/Page.tsx";
@@ -10,7 +10,13 @@ import {
   purchaseStarsForGroup,
   searchGroupsForStars,
 } from "@/features/dashboard/api.ts";
-import type { GroupStarsStatus, ManagedGroup, StarsPlan, StarsOverview, StarsStatus } from "@/features/dashboard/types.ts";
+import type {
+  GroupStarsStatus,
+  ManagedGroup,
+  StarsPlan,
+  StarsOverview,
+  StarsStatus,
+} from "@/features/dashboard/types.ts";
 import { useOwnerProfile } from "@/features/dashboard/useOwnerProfile.ts";
 import { formatNumber, toPersianDigits } from "@/utils/format.ts";
 
@@ -20,10 +26,60 @@ type LocationState = {
   focusGroupId?: string;
 };
 
-const BADGE_LABELS: Record<GroupStarsStatus["status"], string> = {
-  active: "????",
-  expiring: "???? ?? ? ???",
-  expired: "????? ?????",
+const TEXT = {
+  badges: {
+    active: "Active",
+    expiring: "Expiring soon",
+    expired: "Expired",
+  } satisfies Record<GroupStarsStatus["status"], string>,
+  load: {
+    header: "Loading",
+    description: "Please wait a moment.",
+  },
+  error: {
+    header: "Failed to fetch stars information",
+    action: "Retry",
+  },
+  overview: {
+    title: "Managed groups",
+    hint: "Tap a card to manage stars for that group",
+    empty: "No groups are connected yet.",
+    manageButton: "Select / manage",
+  },
+  plans: {
+    title: "Renewal plans",
+  },
+  purchase: {
+    title: "Purchase summary",
+    groupLabel: "Selected group",
+    planLabel: "Selected duration",
+    priceLabel: "Cost",
+    balanceLabel: "Your stars balance",
+    notSelected: "Not selected",
+    insufficient: "Balance is not sufficient.",
+    button: "Pay with stars",
+    processing: "Processing...",
+    refresh: "Refresh data",
+  },
+  gift: {
+    title: "Gift stars to another group",
+    placeholder: "Search by group or ID",
+    searching: "Searching...",
+    noResults: "No matching groups found.",
+    select: "Select",
+    button: "Gift stars",
+    processing: "Sending...",
+    insufficient: "Balance is not sufficient for this gift.",
+  },
+  success: {
+    purchase: (groupTitle: string, days: number) =>
+      `${groupTitle} extended for ${toPersianDigits(days)} day(s).`,
+    gift: (groupTitle: string, days: number) =>
+      `Sent ${toPersianDigits(days)} day(s) of stars to ${groupTitle}.`,
+    purchaseSnackbar: "Payment completed successfully.",
+    giftSnackbar: "Gift sent successfully.",
+    fallbackUser: "Unnamed",
+  },
 };
 
 const BADGE_CLASSES: Record<GroupStarsStatus["status"], string> = {
@@ -34,17 +90,17 @@ const BADGE_CLASSES: Record<GroupStarsStatus["status"], string> = {
 
 function formatDaysRemaining(days: number): string {
   if (days <= 0) {
-    return "?????? ???? ???";
+    return "No balance";
   }
-  return `${toPersianDigits(days)} ??? ??????????`;
+  return `${toPersianDigits(days)} days remaining`;
 }
 
 function planDaysLabel(plan: StarsPlan): string {
-  return `${toPersianDigits(plan.days)} ????`;
+  return `${toPersianDigits(plan.days)} days`;
 }
 
 function planPriceLabel(plan: StarsPlan): string {
-  return `${formatNumber(plan.price)} ??`;
+  return `${formatNumber(plan.price)} stars`;
 }
 
 function resolveStarsStatus(days: number): StarsStatus {
@@ -59,6 +115,7 @@ function resolveStarsStatus(days: number): StarsStatus {
 
 export function StarsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const locationState = (location.state ?? {}) as LocationState;
   const focusGroupId = locationState.focusGroupId;
   const { username } = useOwnerProfile();
@@ -171,9 +228,18 @@ export function StarsPage() {
     };
   }, [giftQuery]);
 
-  const selectedGroup = useMemo(() => overview?.groups.find((item) => item.group.id === selectedGroupId) ?? null, [overview, selectedGroupId]);
-  const selectedPlan = useMemo(() => overview?.plans.find((plan) => plan.id === selectedPlanId) ?? null, [overview, selectedPlanId]);
-  const giftPlan = useMemo(() => overview?.plans.find((plan) => plan.id === giftPlanId) ?? null, [overview, giftPlanId]);
+  const selectedGroup = useMemo(
+    () => overview?.groups.find((item) => item.group.id === selectedGroupId) ?? null,
+    [overview, selectedGroupId],
+  );
+  const selectedPlan = useMemo(
+    () => overview?.plans.find((plan) => plan.id === selectedPlanId) ?? null,
+    [overview, selectedPlanId],
+  );
+  const giftPlan = useMemo(
+    () => overview?.plans.find((plan) => plan.id === giftPlanId) ?? null,
+    [overview, giftPlanId],
+  );
   const balance = overview?.balance ?? 0;
 
   const insufficientBalance = useMemo(() => {
@@ -223,9 +289,9 @@ export function StarsPage() {
         });
         return { ...prev, balance: balanceValue, groups };
       });
-      setSuccessMessage(`? ?????? ???? ${selectedGroup.group.title} ???? ${toPersianDigits(selectedPlan.days)} ??? ????? ??.`);
-      setSnackbar("?????? ??????????? ???");
-      const nickname = username ? `@${username}` : "?????";
+      setSuccessMessage(TEXT.success.purchase(selectedGroup.group.title, selectedPlan.days));
+      setSnackbar(TEXT.success.purchaseSnackbar);
+      const nickname = username ? `@${username}` : TEXT.success.fallbackUser;
       console.info(`[stars] DM to bot: ${nickname} extended ${selectedGroup.group.title} by ${selectedPlan.days} days.`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -263,11 +329,10 @@ export function StarsPage() {
         });
         return { ...prev, balance: balanceValue, groups };
       });
-      setGiftMessage(`?? ??? ${toPersianDigits(giftPlan.days)} ??? ?????? ???? ???? ${giftSelectedGroup.title} ???? ?????.`);
-      setSnackbar("?????? ??????????? ???");
-      const nickname = username ? `@${username}` : "?????";
+      setGiftMessage(TEXT.success.gift(giftSelectedGroup.title, giftPlan.days));
+      setSnackbar(TEXT.success.giftSnackbar);
+      const nickname = username ? `@${username}` : TEXT.success.fallbackUser;
       console.info(`[stars] DM to bot: ${nickname} gifted ${giftPlan.days} days to ${giftSelectedGroup.title}.`);
-      console.info(`[stars] notify owner: ???? ${giftSelectedGroup.title} ?? ??? ${nickname} ???? ??.`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setSnackbar(message);
@@ -283,8 +348,8 @@ export function StarsPage() {
   if (loading) {
     return (
       <Page>
-        <div className={styles.page} dir="rtl">
-          <Placeholder header="?? ??? ????????" description="????? ??? ????? ??? ????." />
+        <div className={styles.page} dir="ltr">
+          <Placeholder header={TEXT.load.header} description={TEXT.load.description} />
         </div>
       </Page>
     );
@@ -293,10 +358,10 @@ export function StarsPage() {
   if (error) {
     return (
       <Page>
-        <div className={styles.page} dir="rtl">
-          <Placeholder header="??? ?? ?????? ????" description={error.message}>
+        <div className={styles.page} dir="ltr">
+          <Placeholder header={TEXT.error.header} description={error.message}>
             <Button mode="filled" onClick={loadOverview}>
-              ???? ????
+              {TEXT.error.action}
             </Button>
           </Placeholder>
         </div>
@@ -310,17 +375,20 @@ export function StarsPage() {
 
   return (
     <Page>
-      <div className={styles.page} dir="rtl">
+      <div className={styles.page} dir="ltr">
+        <div className={styles.section}>
+          <Button mode="plain" size="s" onClick={() => navigate(-1)}>??????</Button>
+        </div>
         <section className={styles.section}>
           <div className={styles.actionsRow}>
             <Title level="3" className={styles.sectionTitle}>
-              ????? ?????? ???????
+              {TEXT.overview.title}
             </Title>
-            <Text className={styles.scrollHint}>???? ?????? ???? ??????? ?? ?? ?????? ????</Text>
+            <Text className={styles.scrollHint}>{TEXT.overview.hint}</Text>
           </div>
           <div className={styles.groupsList}>
             {overview.groups.length === 0 ? (
-              <Text className={styles.secondaryText}>????? ???? ?????? ???? ???.</Text>
+              <Text className={styles.secondaryText}>{TEXT.overview.empty}</Text>
             ) : (
               overview.groups.map((item) => {
                 const active = item.group.id === selectedGroupId;
@@ -340,13 +408,13 @@ export function StarsPage() {
                       <div className={styles.groupInfo}>
                         <Text weight="2">{item.group.title}</Text>
                         <Text className={styles.secondaryText}>
-                          {toPersianDigits(item.group.membersCount)} ???
+                          {toPersianDigits(item.group.membersCount)} members
                         </Text>
                       </div>
                     </div>
                     <div className={styles.groupActions}>
                       <span className={classNames(styles.badge, BADGE_CLASSES[item.status])}>
-                        {BADGE_LABELS[item.status]}
+                        {TEXT.badges[item.status]}
                       </span>
                       <Text className={styles.secondaryText}>{formatDaysRemaining(item.daysLeft)}</Text>
                     </div>
@@ -358,7 +426,7 @@ export function StarsPage() {
                         handleSelectGroup(item.group.id);
                       }}
                     >
-                      ????? / ????
+                      {TEXT.overview.manageButton}
                     </Button>
                   </div>
                 );
@@ -369,7 +437,7 @@ export function StarsPage() {
 
         <section className={styles.section}>
           <Title level="3" className={styles.sectionTitle}>
-            ??????? ????
+            {TEXT.plans.title}
           </Title>
           <div className={styles.planGrid}>
             {overview.plans.map((plan) => {
@@ -392,34 +460,32 @@ export function StarsPage() {
 
         <section className={styles.section}>
           <Title level="3" className={styles.sectionTitle}>
-            ?????? ? ?????
+            {TEXT.purchase.title}
           </Title>
           <div className={styles.summaryGrid}>
             <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>???? ??????????</span>
+              <span className={styles.summaryLabel}>{TEXT.purchase.groupLabel}</span>
               <span className={styles.summaryValue}>
-                {selectedGroup ? selectedGroup.group.title : "?????? ????"}
+                {selectedGroup ? selectedGroup.group.title : TEXT.purchase.notSelected}
               </span>
             </div>
             <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>??? ??????????</span>
+              <span className={styles.summaryLabel}>{TEXT.purchase.planLabel}</span>
               <span className={styles.summaryValue}>
-                {selectedPlan ? planDaysLabel(selectedPlan) : "?????? ????"}
+                {selectedPlan ? planDaysLabel(selectedPlan) : TEXT.purchase.notSelected}
               </span>
             </div>
             <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>?????</span>
+              <span className={styles.summaryLabel}>{TEXT.purchase.priceLabel}</span>
               <span className={styles.summaryValue}>
                 {selectedPlan ? planPriceLabel(selectedPlan) : "--"}
               </span>
             </div>
             <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>?????? Stars ???</span>
-              <span className={styles.summaryValue}>{formatNumber(balance)} ??</span>
+              <span className={styles.summaryLabel}>{TEXT.purchase.balanceLabel}</span>
+              <span className={styles.summaryValue}>{formatNumber(balance)} stars</span>
               {insufficientBalance && (
-                <Text className={styles.secondaryText}>
-                  ?????? ???? ????
-                </Text>
+                <Text className={styles.secondaryText}>{TEXT.purchase.insufficient}</Text>
               )}
             </div>
           </div>
@@ -432,28 +498,28 @@ export function StarsPage() {
               disabled={processing || !selectedGroup || !selectedPlan || insufficientBalance}
               onClick={handlePurchase}
             >
-              {processing ? "?? ??? ??????..." : "?????? ?? Stars"}
+              {processing ? TEXT.purchase.processing : TEXT.purchase.button}
             </Button>
             <Button mode="plain" size="s" onClick={loadOverview} disabled={processing}>
-              ??????????? ???????
+              {TEXT.purchase.refresh}
             </Button>
           </div>
         </section>
 
         <section className={styles.section}>
           <Title level="3" className={styles.sectionTitle}>
-            ???? ???? ??????
+            {TEXT.gift.title}
           </Title>
           <div className={styles.giftSearch}>
             <Input
               value={giftQuery}
               onChange={(event) => setGiftQuery(event.target.value)}
-              placeholder="?????? ??? ?? ID ????"
-              dir="rtl"
+              placeholder={TEXT.gift.placeholder}
+              dir="ltr"
             />
-            {giftLoading && <Text className={styles.secondaryText}>?? ??? ?????...</Text>}
+            {giftLoading && <Text className={styles.secondaryText}>{TEXT.gift.searching}</Text>}
             {!giftLoading && giftQuery && giftResults.length === 0 && (
-              <Text className={styles.secondaryText}>????? ?? ??? ?????? ???? ???.</Text>
+              <Text className={styles.secondaryText}>{TEXT.gift.noResults}</Text>
             )}
             <div className={styles.searchResults}>
               {giftResults.map((group) => {
@@ -470,7 +536,7 @@ export function StarsPage() {
                     <div className={styles.groupInfo}>
                       <Text weight="2">{group.title}</Text>
                       <Text className={styles.secondaryText}>
-                        {toPersianDigits(group.membersCount)} ???
+                        {toPersianDigits(group.membersCount)} members
                       </Text>
                     </div>
                     <Button
@@ -482,7 +548,7 @@ export function StarsPage() {
                         setGiftMessage("");
                       }}
                     >
-                      ??????
+                      {TEXT.gift.select}
                     </Button>
                   </div>
                 );
@@ -515,10 +581,10 @@ export function StarsPage() {
               disabled={giftProcessing || !giftSelectedGroup || !giftPlan || insufficientGiftBalance}
               onClick={handleGift}
             >
-              {giftProcessing ? "?? ??? ??????..." : "?????? ? ????"}
+              {giftProcessing ? TEXT.gift.processing : TEXT.gift.button}
             </Button>
             {insufficientGiftBalance && (
-              <Text className={styles.secondaryText}>?????? ???? ??? ??? ???? ????.</Text>
+              <Text className={styles.secondaryText}>{TEXT.gift.insufficient}</Text>
             )}
           </div>
         </section>
@@ -532,7 +598,3 @@ export function StarsPage() {
     </Page>
   );
 }
-
-
-
-

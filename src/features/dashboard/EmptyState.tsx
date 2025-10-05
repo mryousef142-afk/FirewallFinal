@@ -1,4 +1,4 @@
-﻿import { openLink } from "@telegram-apps/sdk-react";
+import { openLink } from "@telegram-apps/sdk-react";
 import { Button, Placeholder, Text } from "@telegram-apps/telegram-ui";
 import Lottie from "lottie-react";
 
@@ -25,13 +25,13 @@ export function EmptyState({ inviteUrl, onInvite }: EmptyStateProps) {
   };
 
   return (
-    <div className={styles.wrapper} dir="rtl">
+    <div className={styles.wrapper} dir="ltr">
       <Placeholder
         className={styles.placeholder}
-        header={"\\u0647\\u0646\\u0648\\u0632 \\u06AF\\u0631\\u0648\\u0647\\u06CC \\u062B\\u0628\\u062A \\u0646\\u0634\\u062F\\u0647"}
+        header="No groups yet"
         description={
           <Text weight="2" className={styles.description}>
-            {"\u0634\u0645\u0627 \u0647\u06CC\u0686 \u06AF\u0631\u0648\u0647\u06CC \u062A\u062D\u062A \u0645\u062F\u06CC\u0631\u06CC\u062A \u0627\u06CC\u0646 \u0631\u0628\u0627\u062A \u0646\u062F\u0627\u0631\u06CC\u062F."}
+            You are not managing any groups with this bot yet.
           </Text>
         }
       >
@@ -47,15 +47,9 @@ export function EmptyState({ inviteUrl, onInvite }: EmptyStateProps) {
           onClick={handleInvite}
           disabled={!inviteUrl && !onInvite}
         >
-          {"\u2795 \u0627\u0641\u0632\u0648\u062F\u0646 \u0631\u0628\u0627\u062A \u0628\u0647 \u06AF\u0631\u0648\u0647"}
+          Add the bot to a group
         </Button>
       </Placeholder>
     </div>
   );
 }
-
-
-
-
-
-

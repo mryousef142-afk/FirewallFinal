@@ -20,7 +20,7 @@ import {
 } from "@/features/dashboard/api.ts";
 import type { CountLimitSettings, ManagedGroup } from "@/features/dashboard/types.ts";
 import { classNames } from "@/css/classnames.ts";
-import { toPersianDigits } from "@/utils/format.ts";
+import { formatNumber } from "@/utils/format.ts";
 
 import styles from "./GroupCountLimitSettingsPage.module.css";
 
@@ -29,58 +29,56 @@ type LocationState = {
 };
 
 const TEXT = {
-  zeroDisabledNote: "\u0645\u0642\u062f\u0627\u0631 \u0635\u0641\u0631 \u06cc\u0639\u0646\u06cc \u0645\u062d\u062f\u0648\u062f\u06cc\u062a \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0645\u06cc\u200c\u0634\u0648\u062f.",
-  loading: "\u062f\u0631 \u062d\u0627\u0644 \u0628\u0627\u0631\u06af\u0630\u0627\u0631\u06cc \u062a\u0646\u0638\u06cc\u0645\u0627\u062a...",
-  errorHeader: "\u062e\u0637\u0627 \u062f\u0631 \u062f\u0631\u06cc\u0627\u0641\u062a \u0627\u0637\u0644\u0627\u0639\u0627\u062a",
-  back: "\u0628\u0627\u0632\u06af\u0634\u062a",
-  unavailableHeader: "\u062a\u0646\u0638\u06cc\u0645\u0627\u062a \u062f\u0631 \u062f\u0633\u062a\u0631\u0633 \u0646\u06cc\u0633\u062a",
-  unknownGroup: "\u06af\u0631\u0648\u0647 \u0646\u0627\u0634\u0646\u0627\u062e\u062a\u0647",
-  pageSubtitle: "\u0645\u062d\u062f\u0648\u062f\u06cc\u062a\u200c\u0647\u0627\u06cc \u0645\u0628\u062a\u0646\u06cc \u0628\u0631 \u0634\u0645\u0627\u0631\u0634",
-  notice: "\u0645\u0642\u062f\u0627\u0631 \u06f0 \u0647\u0631 \u0645\u062d\u062f\u0648\u062f\u06cc\u062a \u0631\u0627 \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0645\u06cc\u200c\u06a9\u0646\u062f. \u062f\u0631 \u0635\u0648\u0631\u062a \u0646\u0642\u0636 \u0647\u0631 \u06cc\u06a9 \u0627\u0632 \u0642\u0648\u0627\u0646\u06cc\u0646\u060c \u0645\u062c\u0627\u0632\u0627\u062a \u067e\u06cc\u0634\u200c\u0641\u0631\u0636 \u06af\u0631\u0648\u0647 \u0628\u0647 \u0635\u0648\u0631\u062a \u062e\u0648\u062f\u06a9\u0627\u0631 \u0627\u0639\u0645\u0627\u0644 \u0645\u06cc\u200c\u0634\u0648\u062f.",
-  cardMinTitle: "\u062d\u062f\u0627\u0642\u0644 \u062a\u0639\u062f\u0627\u062f \u06a9\u0644\u0645\u0627\u062a \u067e\u06cc\u0627\u0645",
-  cardMinHint: "\u0647\u0631 \u067e\u06cc\u0627\u0645 \u0628\u0627\u06cc\u062f \u062d\u062f\u0627\u0642\u0644 \u0627\u06cc\u0646 \u062a\u0639\u062f\u0627\u062f \u06a9\u0644\u0645\u0647 \u062f\u0627\u0634\u062a\u0647 \u0628\u0627\u0634\u062f \u062a\u0627 \u0642\u0628\u0648\u0644 \u0634\u0648\u062f.",
-  cardMinLabel: "\u062d\u062f\u0627\u0642\u0644 \u06a9\u0644\u0645\u0647 \u0645\u062c\u0627\u0632",
-  cardMinTooltip: "\u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u06a9\u0648\u062a\u0627\u0647\u200c\u062a\u0631 \u0627\u0632 \u0627\u06cc\u0646 \u0645\u0642\u062f\u0627\u0631 \u062d\u0630\u0641 \u0645\u06cc\u200c\u0634\u0648\u0646\u062f \u0648 \u0645\u062c\u0627\u0632\u0627\u062a \u067e\u06cc\u0634\u200c\u0641\u0631\u0636 \u0627\u062c\u0631\u0627 \u0645\u06cc\u200c\u0634\u0648\u062f.",
-  placeholderWords: "\u062a\u0639\u062f\u0627\u062f \u06a9\u0644\u0645\u0627\u062a",
-  cardMinStatusActive: "\u062d\u062f\u0627\u0642\u0644 {value} \u06a9\u0644\u0645\u0647 \u0628\u0631\u0627\u06cc \u0647\u0631 \u067e\u06cc\u0627\u0645 \u0627\u0644\u0632\u0627\u0645\u06cc \u0627\u0633\u062a.",
-  cardMaxTitle: "\u062d\u062f\u0627\u06a9\u062b\u0631 \u062a\u0639\u062f\u0627\u062f \u06a9\u0644\u0645\u0627\u062a \u067e\u06cc\u0627\u0645",
-  cardMaxHint: "\u0627\u06af\u0631 \u067e\u06cc\u0627\u0645 \u0628\u06cc\u0634 \u0627\u0632 \u0627\u06cc\u0646 \u062a\u0639\u062f\u0627\u062f \u06a9\u0644\u0645\u0647 \u062f\u0627\u0634\u062a\u0647 \u0628\u0627\u0634\u062f\u060c \u0631\u0628\u0627\u062a \u0622\u0646 \u0631\u0627 \u062d\u0630\u0641 \u06cc\u0627 \u0627\u062e\u0637\u0627\u0631 \u0635\u0627\u062f\u0631 \u0645\u06cc\u200c\u06a9\u0646\u062f.",
-  cardMaxLabel: "\u0633\u0642\u0641 \u0637\u0648\u0644 \u067e\u06cc\u0627\u0645",
-  cardMaxTooltip: "\u0628\u0631\u0627\u06cc \u0622\u0632\u0627\u062f \u06af\u0630\u0627\u0634\u062a\u0646 \u0637\u0648\u0644 \u067e\u06cc\u0627\u0645\u060c \u0645\u0642\u062f\u0627\u0631 \u0631\u0627 \u0635\u0641\u0631 \u0642\u0631\u0627\u0631 \u062f\u0647\u06cc\u062f \u06cc\u0627 \u0639\u062f\u062f \u0628\u0632\u0631\u06af\u200c\u062a\u0631\u06cc \u0627\u0632 \u062d\u062f\u0627\u0642\u0644 \u0627\u0646\u062a\u062e\u0627\u0628 \u06a9\u0646\u06cc\u062f.",
-  cardMaxStatusInvalid: "\u0633\u0642\u0641 \u06a9\u0644\u0645\u0627\u062a \u0646\u0645\u06cc\u200c\u062a\u0648\u0627\u0646\u062f \u06a9\u0645\u062a\u0631 \u0627\u0632 \u062d\u062f\u0627\u0642\u0644 \u062a\u0639\u0631\u06cc\u0641 \u0634\u062f\u0647 \u0628\u0627\u0634\u062f.",
-  cardMaxStatusActive: "\u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u0628\u06cc\u0634 \u0627\u0632 {value} \u06a9\u0644\u0645\u0647 \u0645\u0633\u062f\u0648\u062f \u0645\u06cc\u200c\u0634\u0648\u0646\u062f.",
-  cardCountTitle: "\u0645\u062d\u062f\u0648\u062f\u06cc\u062a \u062a\u0639\u062f\u0627\u062f \u067e\u06cc\u0627\u0645 \u062f\u0631 \u0628\u0627\u0632\u0647 \u0632\u0645\u0627\u0646\u06cc",
-  cardCountHint: "\u0647\u0631 \u06a9\u0627\u0631\u0628\u0631 \u062a\u0646\u0647\u0627 \u0645\u06cc\u200c\u062a\u0648\u0627\u0646\u062f \u062d\u062f\u0627\u06a9\u062b\u0631 \u0627\u06cc\u0646 \u062a\u0639\u062f\u0627\u062f \u067e\u06cc\u0627\u0645 \u0631\u0627 \u062f\u0631 \u0628\u0627\u0632\u0647 \u062a\u0639\u0631\u06cc\u0641 \u0634\u062f\u0647 \u0627\u0631\u0633\u0627\u0644 \u06a9\u0646\u062f.",
-  cardCountLabel: "\u062a\u0639\u062f\u0627\u062f \u067e\u06cc\u0627\u0645 \u0645\u062c\u0627\u0632",
-  cardCountTooltip: "\u0631\u0628\u0627\u062a \u0634\u0645\u0627\u0631\u0646\u062f\u0647 \u067e\u06cc\u0627\u0645 \u0647\u0631 \u06a9\u0627\u0631\u0628\u0631 \u0631\u0627 \u062f\u0631 \u0628\u0627\u0632\u0647 \u0627\u0646\u062a\u062e\u0627\u0628\u06cc \u0628\u0647\u200c\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06cc \u0645\u06cc\u200c\u06a9\u0646\u062f.",
-  placeholderMessages: "\u062a\u0639\u062f\u0627\u062f \u067e\u06cc\u0627\u0645",
-  cardCountStatusActive: "\u0647\u0631 \u06a9\u0627\u0631\u0628\u0631 \u062a\u0646\u0647\u0627 {value} \u067e\u06cc\u0627\u0645 \u0645\u06cc\u200c\u062a\u0648\u0627\u0646\u062f \u0627\u0631\u0633\u0627\u0644 \u06a9\u0646\u062f.",
-  cardWindowTitle: "\u0628\u0627\u0632\u0647 \u0632\u0645\u0627\u0646\u06cc \u0634\u0645\u0627\u0631\u0634 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627 (\u062f\u0642\u06cc\u0642\u0647)",
-  cardWindowHint: "\u0645\u062f\u062a\u200c\u0632\u0645\u0627\u0646\u06cc \u06a9\u0647 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u0647\u0631 \u06a9\u0627\u0631\u0628\u0631 \u062f\u0631 \u0622\u0646 \u0628\u0631\u0627\u06cc \u0627\u0639\u0645\u0627\u0644 \u0645\u062d\u062f\u0648\u062f\u06cc\u062a \u0634\u0645\u0627\u0631\u0634 \u0645\u06cc\u200c\u0634\u0648\u0646\u062f.",
-  cardWindowLabel: "\u0645\u062f\u062a \u0628\u0627\u0632\u0647 (\u062f\u0642\u06cc\u0642\u0647)",
-  cardWindowTooltip: "\u0627\u06af\u0631 \u0645\u062d\u062f\u0648\u062f\u06cc\u062a \u067e\u06cc\u0627\u0645 \u0631\u0627 \u0635\u0641\u0631 \u06a9\u0646\u06cc\u062f\u060c \u0627\u06cc\u0646 \u0641\u06cc\u0644\u062f \u0628\u0647 \u0635\u0648\u0631\u062a \u062e\u0648\u062f\u06a9\u0627\u0631 \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0645\u06cc\u200c\u0634\u0648\u062f.",
-  placeholderMinutes: "\u062f\u0642\u06cc\u0642\u0647",
-  cardWindowStatusDisabled: "\u0628\u0631\u0627\u06cc \u0641\u0639\u0627\u0644\u200c\u0633\u0627\u0632\u06cc\u060c \u0627\u0628\u062a\u062f\u0627 \u062a\u0639\u062f\u0627\u062f \u067e\u06cc\u0627\u0645 \u0645\u062c\u0627\u0632 \u0631\u0627 \u0628\u0632\u0631\u06af\u062a\u0631 \u0627\u0632 \u0635\u0641\u0631 \u0642\u0631\u0627\u0631 \u062f\u0647\u06cc\u062f.",
-  cardWindowStatusActive: "\u0628\u0627\u0632\u0647 \u0634\u0645\u0627\u0631\u0634 {value} \u062f\u0642\u06cc\u0642\u0647 \u0627\u0633\u062a.",
-  cardDuplicateTitle: "\u062a\u0639\u062f\u0627\u062f \u0645\u062c\u0627\u0632 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u062a\u06a9\u0631\u0627\u0631\u06cc",
-  cardDuplicateHint: "\u0631\u0628\u0627\u062a \u0645\u062a\u0646 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627 \u0631\u0627 \u0647\u0634 \u0645\u06cc\u200c\u06a9\u0646\u062f \u062a\u0627 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u062a\u06a9\u0631\u0627\u0631\u06cc \u0631\u0627 \u062a\u0634\u062e\u06cc\u0635 \u062f\u0647\u062f \u0648 \u0628\u06cc\u0634\u062a\u0631 \u0627\u0632 \u0627\u06cc\u0646 \u0645\u0642\u062f\u0627\u0631 \u0631\u0627 \u0645\u062d\u062f\u0648\u062f \u0645\u06cc\u200c\u06a9\u0646\u062f.",
-  cardDuplicateLabel: "\u067e\u06cc\u0627\u0645 \u062a\u06a9\u0631\u0627\u0631\u06cc \u0645\u062c\u0627\u0632",
-  cardDuplicateTooltip: "\u0628\u0631\u0627\u06cc \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u06a9\u0631\u062f\u0646 \u0645\u062d\u062f\u0648\u062f\u06cc\u062a \u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u062a\u06a9\u0631\u0627\u0631\u06cc\u060c \u0645\u0642\u062f\u0627\u0631 \u0631\u0627 \u0635\u0641\u0631 \u0642\u0631\u0627\u0631 \u062f\u0647\u06cc\u062f.",
-  cardDuplicateStatusActive: "\u0647\u0631 \u06a9\u0627\u0631\u0628\u0631 \u062a\u0646\u0647\u0627 {value} \u067e\u06cc\u0627\u0645 \u062a\u06a9\u0631\u0627\u0631\u06cc \u0645\u06cc\u200c\u062a\u0648\u0627\u0646\u062f \u0627\u0631\u0633\u0627\u0644 \u06a9\u0646\u062f.",
-  cardDuplicateWindowTitle: "\u0628\u0627\u0632\u0647 \u0632\u0645\u0627\u0646\u06cc \u0634\u0645\u0627\u0631\u0634 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u062a\u06a9\u0631\u0627\u0631\u06cc (\u062f\u0642\u06cc\u0642\u0647)",
-  cardDuplicateWindowHint: "\u0628\u0627\u0632\u0647\u200c\u0627\u06cc \u06a9\u0647 \u062f\u0631 \u0622\u0646 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u0645\u0634\u0627\u0628\u0647 \u0628\u0631\u0627\u06cc \u0647\u0631 \u06a9\u0627\u0631\u0628\u0631 \u0645\u062d\u0627\u0633\u0628\u0647 \u0645\u06cc\u200c\u0634\u0648\u0646\u062f\u061b \u0645\u0642\u062f\u0627\u0631 \u067e\u06cc\u0634\u200c\u0641\u0631\u0636 \u06f1\u06f4\u06f4\u06f0 \u062f\u0642\u06cc\u0642\u0647 (\u06cc\u06a9 \u0631\u0648\u0632) \u0627\u0633\u062a.",
-  cardDuplicateWindowLabel: "\u0645\u062f\u062a \u0628\u0627\u0632\u0647 (\u062f\u0642\u06cc\u0642\u0647)",
-  cardDuplicateWindowTooltip: "\u0627\u06af\u0631 \u0645\u062d\u062f\u0648\u062f\u06cc\u062a \u067e\u06cc\u0627\u0645 \u062a\u06a9\u0631\u0627\u0631\u06cc \u063a\u06cc\u0631\u0641\u0639\u0627\u0644 \u0628\u0627\u0634\u062f\u060c \u0627\u06cc\u0646 \u0628\u0627\u0632\u0647 \u0646\u06cc\u0632 \u0628\u06cc\u200c\u0627\u062b\u0631 \u062e\u0648\u0627\u0647\u062f \u0628\u0648\u062f.",
-  cardDuplicateWindowStatusDisabled: "\u0628\u0631\u0627\u06cc \u0641\u0639\u0627\u0644\u200c\u0633\u0627\u0632\u06cc\u060c \u0627\u0628\u062a\u062f\u0627 \u062a\u0639\u062f\u0627\u062f \u0645\u062c\u0627\u0632 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u062a\u06a9\u0631\u0627\u0631\u06cc \u0631\u0627 \u0628\u0632\u0631\u06af\u062a\u0631 \u0627\u0632 \u0635\u0641\u0631 \u0642\u0631\u0627\u0631 \u062f\u0647\u06cc\u062f.",
-  cardDuplicateWindowStatusActive: "\u067e\u06cc\u0627\u0645\u200c\u0647\u0627\u06cc \u062a\u06a9\u0631\u0627\u0631\u06cc \u062f\u0631 \u0628\u0627\u0632\u0647 {value} \u062f\u0642\u06cc\u0642\u0647 \u0634\u0645\u0627\u0631\u0634 \u0645\u06cc\u200c\u0634\u0648\u0646\u062f.",
-  saveText: "\u0630\u062e\u06cc\u0631\u0647 \u062a\u0646\u0638\u06cc\u0645\u0627\u062a",
-  savingText: "\u062f\u0631 \u062d\u0627\u0644 \u0630\u062e\u06cc\u0631\u0647...",
-  saveSuccess: "\u062a\u0646\u0638\u06cc\u0645\u0627\u062a \u0628\u0627 \u0645\u0648\u0641\u0642\u06cc\u062a \u0630\u062e\u06cc\u0631\u0647 \u0634\u062f.",
-  saveErrorPrefix: "\u0630\u062e\u06cc\u0631\u0647 \u062a\u0646\u0638\u06cc\u0645\u0627\u062a \u0628\u0627 \u062e\u0637\u0627 \u0645\u0648\u0627\u062c\u0647 \u0634\u062f: "
-} as const;
-
-const formatValue = (value: number): string => toPersianDigits(value);
-
+  zeroDisabledNote: "Enter 0 to disable this limit.",
+  loading: "Loading settings...",
+  errorHeader: "Unable to load settings",
+  back: "Back",
+  unavailableHeader: "Settings are currently unavailable",
+  unknownGroup: "Unknown group",
+  pageSubtitle: "Count-based moderation limits",
+  notice: "Set the values below to control message length, frequency, and duplicates. When a limit is exceeded the group's default penalty is applied automatically.",
+  cardMinTitle: "Minimum message length",
+  cardMinHint: "Messages shorter than this number of words are rejected.",
+  cardMinLabel: "Minimum words",
+  cardMinTooltip: "Shorter messages are removed and the default penalty is triggered.",
+  placeholderWords: "Word count",
+  cardMinStatusActive: "Messages must contain at least {value} words.",
+  cardMaxTitle: "Maximum message length",
+  cardMaxHint: "Messages longer than this many words are removed or warned.",
+  cardMaxLabel: "Maximum words",
+  cardMaxTooltip: "Set to 0 to allow any length or choose a value greater than the minimum.",
+  cardMaxStatusInvalid: "The maximum cannot be lower than the minimum.",
+  cardMaxStatusActive: "Messages longer than {value} words are blocked.",
+  cardCountTitle: "Messages per window",
+  cardCountHint: "Each user may send up to this many messages inside the selected window.",
+  cardCountLabel: "Allowed messages",
+  cardCountTooltip: "The bot counts messages per user and blocks them once the limit is exceeded.",
+  cardCountStatusActive: "Up to {value} messages per window are allowed.",
+  cardWindowTitle: "Counting window (minutes)",
+  cardWindowHint: "Defines how long messages stay in the rolling window.",
+  cardWindowLabel: "Window length",
+  cardWindowTooltip: "Set to 0 to disable the rolling window.",
+  cardWindowStatusActive: "Messages are counted over a {value} minute window.",
+  cardWindowStatusDisabled: "Enable the message limit to configure the window.",
+  cardDuplicateTitle: "Duplicate protection",
+  cardDuplicateHint: "Limit how many times a user can repeat the same message.",
+  cardDuplicateLabel: "Allowed duplicates",
+  cardDuplicateTooltip: "After this many repeats the default penalty is applied.",
+  cardDuplicateStatusActive: "Up to {value} duplicate messages are allowed.",
+  cardDuplicateWindowTitle: "Duplicate tracking window (minutes)",
+  cardDuplicateWindowHint: "Defines how long duplicates are remembered.",
+  cardDuplicateWindowLabel: "Tracking window",
+  cardDuplicateWindowTooltip: "Set to 0 to disable duplicate tracking.",
+  cardDuplicateWindowStatusActive: "Duplicates are tracked for {value} minutes.",
+  cardDuplicateWindowStatusDisabled: "Enable duplicate protection to configure the window.",
+  placeholderMinutes: "Minutes",
+  placeholderMessages: "Message count",
+  saveText: "Save changes",
+  savingText: "Saving...",
+  saveSuccess: "Settings saved successfully.",
+  saveErrorPrefix: "Failed to save settings: ",
+};
+const formatValue = (value: number): string => formatNumber(value);
 export function GroupCountLimitSettingsPage() {
   const navigate = useNavigate();
   const { groupId } = useParams<{ groupId: string }>();
@@ -221,7 +219,7 @@ export function GroupCountLimitSettingsPage() {
 
   if (loading && !settings) {
     return (
-      <div className={styles.loadingState} dir="rtl">
+      <div className={styles.loadingState} dir="ltr">
         <Text weight="2">{TEXT.loading}</Text>
       </div>
     );
@@ -267,7 +265,7 @@ export function GroupCountLimitSettingsPage() {
   const canSave = dirty && !saving;
 
   return (
-    <div className={styles.page} dir="rtl">
+    <div className={styles.page} dir="ltr">
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <Button mode="plain" size="s" onClick={() => navigate(-1)}>
@@ -326,7 +324,7 @@ export function GroupCountLimitSettingsPage() {
                   className={styles.tooltipButton}
                   title={TEXT.cardMinTooltip}
                 >
-                  ؟
+                  ?
                 </button>
               </div>
               <Input
@@ -375,7 +373,7 @@ export function GroupCountLimitSettingsPage() {
                   className={styles.tooltipButton}
                   title={TEXT.cardMaxTooltip}
                 >
-                  ؟
+                  ?
                 </button>
               </div>
               <Input
@@ -426,7 +424,7 @@ export function GroupCountLimitSettingsPage() {
                   className={styles.tooltipButton}
                   title={TEXT.cardCountTooltip}
                 >
-                  ؟
+                  ?
                 </button>
               </div>
               <Input
@@ -475,7 +473,7 @@ export function GroupCountLimitSettingsPage() {
                   className={styles.tooltipButton}
                   title={TEXT.cardWindowTooltip}
                 >
-                  ؟
+                  ?
                 </button>
               </div>
               <Input
@@ -527,7 +525,7 @@ export function GroupCountLimitSettingsPage() {
                   className={styles.tooltipButton}
                   title={TEXT.cardDuplicateTooltip}
                 >
-                  ؟
+                  ?
                 </button>
               </div>
               <Input
@@ -576,7 +574,7 @@ export function GroupCountLimitSettingsPage() {
                   className={styles.tooltipButton}
                   title={TEXT.cardDuplicateWindowTooltip}
                 >
-                  ؟
+                  ?
                 </button>
               </div>
               <Input

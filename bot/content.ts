@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -25,21 +25,21 @@ export interface BotContent {
 
 const fallbackContent: BotContent = {
   messages: {
-    welcome: "سلام! به فایروال بات خوش آمدی!",
-    managementPanel: "از اینجا می‌توانی گروه‌هات را کنترل کنی.",
-    managementQuestion: "ربات را چطور می‌خواهی تنظیم کنی؟",
-    channel: "معرفی کانال و امکانات آن به زودی از طریق پنل مالک تنظیم می‌شود.",
-    commands: "لیست دستورات به زودی اینجا در دسترس خواهد بود.",
-    info: "اطلاعات بیشتر ربات بعد از تکمیل پنل مدیریتی ارائه می‌شود.",
-    inlinePanel: "مسیر پنل درون‌گروهی بزودی فعال می‌شود."
+    welcome: "Hi there! Welcome to Firewall Bot!",
+    managementPanel: "You can control your groups from here.",
+    managementQuestion: "How would you like to configure the bot?",
+    channel: "Channel introductions and features will be available soon from the owner panel.",
+    commands: "The command list will be published here shortly.",
+    info: "More information will appear once the management dashboard is ready.",
+    inlinePanel: "The in-group panel route will be enabled soon."
   },
   buttons: {
-    addToGroup: "➕ Add to Group",
-    managementPanel: "🎛 Management Panel",
-    channel: "📢 Channel",
-    commands: "📚 Commands",
-    info: "💬 Info",
-    miniApp: "Mini App",
+    addToGroup: "Add to Group",
+    managementPanel: "Management Panel",
+    channel: "Channel",
+    commands: "Commands",
+    info: "About",
+    miniApp: "Open Mini App",
     inlinePanel: "Inline Panel"
   }
 };

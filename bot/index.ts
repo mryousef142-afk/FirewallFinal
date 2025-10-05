@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import { Markup, Telegraf } from "telegraf";
 
 import { loadBotContent } from "./content.js";
@@ -76,9 +76,9 @@ bot.action(actionId("managementPanel"), async (ctx) => {
     [Markup.button.callback(content.buttons.inlinePanel, actionId("inlinePanel"))]
   ]);
 
-  const managementMessage = `${escapeMarkdownV2(content.messages.managementPanel)}\n\n*«${escapeMarkdownV2(
+  const managementMessage = `${escapeMarkdownV2(content.messages.managementPanel)}\n\n*${escapeMarkdownV2(
     content.messages.managementQuestion
-  )}»*`;
+  )}*`;
 
   await ctx.reply(managementMessage, {
     parse_mode: "MarkdownV2",
@@ -110,12 +110,14 @@ bot.action(actionId("missingAddToGroup"), async (ctx) => {
 
   if (botUsername) {
     await ctx.reply(
-      "برای اضافه کردن ربات به گروه، ابتدا مقدار BOT_USERNAME یا ADD_TO_GROUP_URL را در تنظیمات محیطی بروزرسانی کن."
+      "Update BOT_USERNAME or ADD_TO_GROUP_URL in your environment so the add-to-group button can generate a valid link."
     );
     return;
   }
 
-  await ctx.reply("لطفاً مقدار BOT_USERNAME یا ADD_TO_GROUP_URL را تنظیم کن تا لینک افزودن به گروه فعال شود.");
+  await ctx.reply(
+    "Please configure BOT_USERNAME or ADD_TO_GROUP_URL so the add-to-group shortcut can be enabled."
+  );
 });
 
 bot.catch((error) => {

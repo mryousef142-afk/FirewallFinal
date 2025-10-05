@@ -32,6 +32,45 @@ type SummaryCard = {
   footer?: ReactNode;
 };
 
+const TEXT = {
+  loadingHeader: "Loading",
+  loadingDescription: "Please wait a moment.",
+  errorHeader: "Error loading",
+  errorAction: "Retry",
+  notFoundHeader: "Group not found",
+  notFoundDescription: "Tap the button below to return to the group list.",
+  back: "Back",
+  headerSubtitle: "Admin panel",
+  modulesButton: "Open menu",
+  analyticsButton: "View full analytics",
+  trendSuffix: "Compared to yesterday",
+  expiredLabel: "Credits expired",
+  expiredDescription: "Renewal is required to continue the service.",
+  activeDescription: "until the end of the current cycle",
+  renewalAction: "Renew credits",
+  summary: {
+    members: {
+      title: "Total members",
+      description: "Live group member stats",
+      icon: "👥",
+    },
+    remaining: {
+      title: "Remaining credits",
+      icon: "⏳",
+    },
+    messages: {
+      title: "Today's messages",
+      description: "Today's group activity volume",
+      icon: "💬",
+    },
+    newMembers: {
+      title: "Today's new members",
+      description: "Today's entries",
+      icon: "➕",
+    },
+  },
+};
+
 export function GroupDashboardPage() {
   const navigate = useNavigate();
   const { groupId } = useParams<{ groupId: string }>();
@@ -95,7 +134,7 @@ export function GroupDashboardPage() {
     }
 
     const remainingLabel = metrics.isExpired
-      ? "❌ اعتبار تمام شده"
+      ? TEXT.expiredLabel
       : formatDurationFromMs(metrics.remainingMs);
 
     const remainingTone: "default" | "danger" = metrics.isExpired ? "danger" : "default";
@@ -103,19 +142,19 @@ export function GroupDashboardPage() {
     return [
       {
         key: "members",
-        icon: "👥",
-        title: "تعداد اعضا",
+        icon: TEXT.summary.members.icon,
+        title: TEXT.summary.members.title,
         value: formatNumber(metrics.membersTotal),
-        description: "آمار لحظه‌ای اعضای گروه",
-        trendLabel: `${formatSignedPercent(metrics.membersTrend.direction, metrics.membersTrend.percent)} نسبت به دیروز`,
+        description: TEXT.summary.members.description,
+        trendLabel: `${formatSignedPercent(metrics.membersTrend.direction, metrics.membersTrend.percent)} ${TEXT.trendSuffix}`,
         trendTone: trendToneFor(metrics.membersTrend.direction),
       },
       {
         key: "remaining",
-        icon: "⏳",
-        title: "اعتبار باقی‌مانده",
+        icon: TEXT.summary.remaining.icon,
+        title: TEXT.summary.remaining.title,
         value: remainingLabel,
-        description: metrics.isExpired ? "برای ادامه خدمات، تمدید ضروری است." : "تا پایان دوره جاری",
+        description: metrics.isExpired ? TEXT.expiredDescription : TEXT.activeDescription,
         trendTone: "neutral",
         tone: remainingTone,
         footer: metrics.isExpired ? (
@@ -125,26 +164,26 @@ export function GroupDashboardPage() {
             stretched
             onClick={() => setMenuOpen(true)}
           >
-            تمدید اعتبار
+            {TEXT.renewalAction}
           </Button>
         ) : undefined,
       },
       {
         key: "messages",
-        icon: "💬",
-        title: "پیام‌های امروز",
+        icon: TEXT.summary.messages.icon,
+        title: TEXT.summary.messages.title,
         value: formatNumber(metrics.messagesToday),
-        description: "حجم فعالیت امروز گروه",
-        trendLabel: `${formatSignedPercent(metrics.messagesTrend.direction, metrics.messagesTrend.percent)} نسبت به دیروز`,
+        description: TEXT.summary.messages.description,
+        trendLabel: `${formatSignedPercent(metrics.messagesTrend.direction, metrics.messagesTrend.percent)} ${TEXT.trendSuffix}`,
         trendTone: trendToneFor(metrics.messagesTrend.direction),
       },
       {
         key: "newMembers",
-        icon: "➕",
-        title: "اعضای جدید امروز",
+        icon: TEXT.summary.newMembers.icon,
+        title: TEXT.summary.newMembers.title,
         value: formatNumber(metrics.newMembersToday),
-        description: "تعداد ورودی‌های امروز",
-        trendLabel: `${formatSignedPercent(metrics.newMembersTrend.direction, metrics.newMembersTrend.percent)} نسبت به دیروز`,
+        description: TEXT.summary.newMembers.description,
+        trendLabel: `${formatSignedPercent(metrics.newMembersTrend.direction, metrics.newMembersTrend.percent)} ${TEXT.trendSuffix}`,
         trendTone: trendToneFor(metrics.newMembersTrend.direction),
       },
     ];
@@ -160,6 +199,9 @@ export function GroupDashboardPage() {
           break;
         case "settings":
           navigate(`/groups/${groupId}/settings/general`, { state: { group } });
+          break;
+        case "bans":
+          navigate(`/groups/${groupId}/settings/bans`, { state: { group } });
           break;
         case "mute":
           navigate(`/groups/${groupId}/settings/mute`, { state: { group } });
@@ -178,6 +220,9 @@ export function GroupDashboardPage() {
           break;
         case "stars":
           navigate("/stars", { state: { focusGroupId: groupId } });
+          break;
+        case "giveaway":
+          navigate("/giveaways", { state: { focusGroupId: groupId } });
           break;
         default:
           console.info(`[group-dashboard] menu item '${key}' selected`);
@@ -199,9 +244,9 @@ export function GroupDashboardPage() {
 
     if (error) {
       return (
-        <Placeholder header="خطا در بارگذاری" description={error.message}>
-          <Button mode="filled" onClick={() => navigate(-1)}>
-            بازگشت
+        <Placeholder header={TEXT.errorHeader} description={error.message}>
+          <Button mode="filled" onClick={() => navigate(0)}>
+            {TEXT.errorAction}
           </Button>
         </Placeholder>
       );
@@ -209,12 +254,9 @@ export function GroupDashboardPage() {
 
     if (!group || !metrics) {
       return (
-        <Placeholder
-          header="گروه یافت نشد"
-          description="برای بازگشت به لیست گروه‌ها دکمه زیر را لمس کن."
-        >
+        <Placeholder header={TEXT.notFoundHeader} description={TEXT.notFoundDescription}>
           <Button mode="filled" onClick={() => navigate("/")}>
-            بازگشت
+            {TEXT.back}
           </Button>
         </Placeholder>
       );
@@ -239,10 +281,15 @@ export function GroupDashboardPage() {
         </div>
         <div className={styles.footerCtas}>
           <Button mode="outline" size="m" stretched onClick={() => setMenuOpen(true)}>
-            مشاهده ماژول‌ها
+            {TEXT.modulesButton}
           </Button>
-          <Button mode="filled" size="m" stretched>
-            برو به آمار کامل
+          <Button
+            mode="filled"
+            size="m"
+            stretched
+            onClick={() => navigate(`/groups/${groupId}/analytics`, { state: { group } })}
+          >
+            {TEXT.analyticsButton}
           </Button>
         </div>
       </>
@@ -250,31 +297,31 @@ export function GroupDashboardPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header} dir="rtl">
+    <div className={styles.page} dir="ltr">
+      <header className={styles.header}>
         <div className={styles.headerLeft}>
           <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            بازگشت
+            {TEXT.back}
           </Button>
         </div>
         <div className={styles.headerCenter}>
           <Avatar
             size={48}
             src={group?.photoUrl ?? undefined}
-            acronym={group?.photoUrl ? undefined : group?.title?.charAt(0).toUpperCase() ?? "?"}
+            acronym={group?.photoUrl ? undefined : group?.title?.charAt(0).toUpperCase() ?? "A"}
             alt={group?.title ?? "group"}
           />
           <div className={styles.headerTitles}>
             <Title level="3" className={styles.groupName}>
-              {group ? group.title : "در حال بارگذاری"}
+              {group ? group.title : TEXT.loadingHeader}
             </Title>
             <Text weight="2" className={styles.groupSubtitle}>
-              پنل مدیریت
+              {TEXT.headerSubtitle}
             </Text>
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="نمایش ماژول‌ها" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label={TEXT.modulesButton} onClick={() => setMenuOpen(true)}>
             <span className={styles.burger}>
               <span />
               <span />
@@ -293,4 +340,3 @@ export function GroupDashboardPage() {
     </div>
   );
 }
-

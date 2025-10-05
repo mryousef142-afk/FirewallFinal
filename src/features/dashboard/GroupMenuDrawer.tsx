@@ -18,26 +18,26 @@ type GroupMenuDrawerProps = {
 };
 
 const MENU_ITEMS: MenuItem[] = [
-  { key: "home", icon: "🏠", label: "صفحه اصلی" },
-  { key: "settings", icon: "⚙️", label: "تنظیمات عمومی" },
-  { key: "bans", icon: "🚫", label: "ممنوعیت‌ها" },
-  { key: "limits", icon: "📏", label: "محدودیت‌های مبتنی بر شمارش" },
-  { key: "mute", icon: "🔕", label: "خاموشی‌ها" },
-  { key: "mandatory", icon: "📌", label: "عضویت‌های اجباری" },
-  { key: "texts", icon: "📝", label: "متن‌های سفارشی" },
-  { key: "analytics", icon: "📊", label: "آمار" },
-  { key: "stars", icon: "⭐", label: "شارژ با استارز" },
-  { key: "giveaway", icon: "🎉", label: "گیواوی" },
+  { key: "home", icon: "🏠", label: "Dashboard" },
+  { key: "settings", icon: "⚙️", label: "General settings" },
+  { key: "bans", icon: "🚫", label: "Content restrictions" },
+  { key: "limits", icon: "📊", label: "Limits" },
+  { key: "mute", icon: "🔕", label: "Quiet hours" },
+  { key: "mandatory", icon: "✅", label: "Mandatory membership" },
+  { key: "texts", icon: "✉️", label: "Custom messages" },
+  { key: "analytics", icon: "📈", label: "Analytics" },
+  { key: "stars", icon: "⭐", label: "Stars top-up" },
+  { key: "giveaway", icon: "🎉", label: "Giveaways" },
 ];
 
 export function GroupMenuDrawer({ open, onClose, activeKey = "home", onSelect }: GroupMenuDrawerProps) {
   return (
     <div className={classNames(styles.overlay, open && styles.overlayVisible)}>
-      <div className={classNames(styles.drawer, open && styles.drawerVisible)} dir="rtl">
+      <div className={classNames(styles.drawer, open && styles.drawerVisible)} dir="ltr">
         <div className={styles.header}>
-          <Text weight="2">ماژول‌های مدیریتی</Text>
+          <Text weight="2">Group management panel</Text>
           <Button mode="plain" size="s" onClick={onClose}>
-            بستن
+            Close
           </Button>
         </div>
         <div className={styles.list}>
@@ -60,5 +60,3 @@ export function GroupMenuDrawer({ open, onClose, activeKey = "home", onSelect }:
     </div>
   );
 }
-
-

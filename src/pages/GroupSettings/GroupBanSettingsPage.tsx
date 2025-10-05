@@ -57,14 +57,14 @@ function ScheduleSection({ title, value, disabled, onModeChange, onStartChange, 
           disabled={disabled}
           onChange={(event) => onModeChange(event.target.value as TimeRangeMode)}
         >
-          <option value="all">فعال در تمام ساعات</option>
-          <option value="custom">فقط در ساعات مشخص</option>
+          <option value="all">Active at all hours</option>
+          <option value="custom">Only during specific hours</option>
         </select>
       </div>
       {value.mode === "custom" && (
         <div className={styles.timeRange}>
           <label className={styles.timeItem}>
-            <span>از</span>
+            <span>From</span>
             <Input
               type="time"
               value={value.start}
@@ -73,7 +73,7 @@ function ScheduleSection({ title, value, disabled, onModeChange, onStartChange, 
             />
           </label>
           <label className={styles.timeItem}>
-            <span>تا</span>
+            <span>To</span>
             <Input
               type="time"
               value={value.end}
@@ -112,17 +112,17 @@ function KeywordListCard({ title, description, value, onChange, onImport, onExpo
         </div>
         <div className={styles.keywordActions}>
           <Button mode="outline" size="s" onClick={onImport}>
-            وارد کردن
+            Import
           </Button>
           <Button mode="outline" size="s" onClick={onExport}>
-            کپی خروجی
+            Copy export
           </Button>
         </div>
       </div>
       <Textarea
         className={styles.textarea}
         rows={6}
-        placeholder="هر خط یک کلمه یا عبارت"
+        placeholder="Each line contains one word or phrase"
         value={value.join("\n")}
         onChange={(event) => {
           const next = event.target.value
@@ -133,7 +133,7 @@ function KeywordListCard({ title, description, value, onChange, onImport, onExpo
         }}
       />
       <Text weight="2" className={styles.keywordMeta}>
-        {lines} خط ثبت شده
+        {lines} entries recorded
       </Text>
     </Card>
   );
@@ -148,46 +148,46 @@ type BanRuleDefinition = {
 };
 
 const BAN_RULE_DEFINITIONS: BanRuleDefinition[] = [
-  { key: "banLinks", title: "حذف لینک‌ها", description: "تمام URL ها و لینک‌ها حذف می‌شوند.", category: "links", icon: "🔗" },
-  { key: "banBots", title: "حذف ربات‌ها", description: "پیام‌های ارسال شده توسط ربات‌ها مسدود می‌شود.", category: "links", icon: "🤖" },
-  { key: "banBotInviters", title: "اخراج ادکننده ربات‌ها", description: "کاربری که ربات اضافه کند از گروه اخراج می‌شود.", category: "links", icon: "⚡" },
-  { key: "banDomains", title: "ممنوعیت دامنه", description: "پیام‌های شامل آدرس سایت حذف می‌شوند.", category: "links", icon: "🌐" },
-  { key: "banUsernames", title: "ممنوعیت نام کاربری", description: "منشن @username مجاز نیست.", category: "links", icon: "@" },
-  { key: "banHashtags", title: "ممنوعیت هشتگ", description: "پیام‌های شامل # حذف می‌شوند.", category: "text", icon: "#" },
-  { key: "banTextPatterns", title: "ممنوعیت الگوهای متنی", description: "الگوهای خاص متن اجازه انتشار ندارند.", category: "text", icon: "📝" },
-  { key: "banForward", title: "ممنوعیت فوروارد", description: "هیچ پیام فوروارد شده‌ای مجاز نیست.", category: "interaction", icon: "🔁" },
-  { key: "banForwardChannels", title: "ممنوعیت فوروارد از کانال", description: "فقط فوروارد از کانال‌ها محدود می‌شود.", category: "interaction", icon: "📣" },
-  { key: "banPhotos", title: "ممنوعیت تصویر", description: "ارسال عکس ممنوع است.", category: "media", icon: "🖼️" },
-  { key: "banStickers", title: "ممنوعیت استیکر", description: "استفاده از استیکر مجاز نیست.", category: "media", icon: "🥲" },
-  { key: "banEmojis", title: "ممنوعیت ایموجی", description: "پیام‌های دارای ایموجی حذف می‌شوند.", category: "text", icon: "😀" },
-  { key: "banEmojiOnly", title: "ممنوعیت پیام فقط ایموجی", description: "پیام‌هایی که فقط از ایموجی تشکیل شده‌اند حذف می‌شوند.", category: "text", icon: "😶" },
-  { key: "banLocation", title: "ممنوعیت لوکیشن", description: "ارسال موقعیت مکانی محدود است.", category: "media", icon: "📍" },
-  { key: "banPhones", title: "ممنوعیت شماره تلفن", description: "پیام‌های حاوی شماره تلفن حذف می‌شوند.", category: "text", icon: "📞" },
-  { key: "banAudio", title: "ممنوعیت موزیک", description: "فایل‌های صوتی (آهنگ) مسدود می‌شوند.", category: "media", icon: "🎵" },
-  { key: "banVoice", title: "ممنوعیت وویس", description: "ارسال پیام صوتی مجاز نیست.", category: "media", icon: "🎙️" },
-  { key: "banFiles", title: "ممنوعیت فایل", description: "فایل‌ها و اسناد (docs) حذف می‌شوند.", category: "media", icon: "📁" },
-  { key: "banApps", title: "ممنوعیت پیام اپلیکیشن", description: "پیام‌های مربوط به بازی/اپ بلاک می‌شوند.", category: "interaction", icon: "🕹️" },
-  { key: "banGif", title: "ممنوعیت GIF", description: "ارسال گیف مجاز نیست.", category: "media", icon: "🎞️" },
-  { key: "banPolls", title: "ممنوعیت نظرسنجی", description: "ساخت Poll در گروه ممنوع است.", category: "interaction", icon: "📊" },
-  { key: "banInlineKeyboards", title: "ممنوعیت کلید شیشه‌ای", description: "پیام‌های دارای دکمه Inline حذف می‌شود.", category: "interaction", icon: "🪟" },
-  { key: "banGames", title: "ممنوعیت بازی‌ها", description: "پیام‌های Game محدود می‌شوند.", category: "interaction", icon: "🎲" },
-  { key: "banSlashCommands", title: "ممنوعیت Slash Commands", description: "دستورات /command قابل استفاده نیست.", category: "interaction", icon: "/" },
-  { key: "banCaptionless", title: "ممنوعیت پست بدون متن", description: "پیام‌های تصویری بدون کپشن حذف می‌شوند.", category: "media", icon: "📝" },
-  { key: "banLatin", title: "ممنوعیت حروف لاتین", description: "حروف انگلیسی در پیام‌ها مجاز نیست.", category: "language", icon: "A" },
-  { key: "banPersian", title: "ممنوعیت حروف فارسی/عربی", description: "نوشتار فارسی یا عربی محدود می‌شود.", category: "language", icon: "ف" },
-  { key: "banCyrillic", title: "ممنوعیت حروف روسی", description: "حروف سیریلیک حذف می‌شوند.", category: "language", icon: "Я" },
-  { key: "banChinese", title: "ممنوعیت حروف چینی", description: "کاراکترهای چینی مجاز نیست.", category: "language", icon: "文" },
-  { key: "banUserReplies", title: "ممنوعیت پاسخ کاربران", description: "کاربران عادی نمی‌توانند به هم پاسخ دهند.", category: "interaction", icon: "💬" },
-  { key: "banCrossReplies", title: "ممنوعیت پاسخ به چت‌های دیگر", description: "پاسخ به پیام از گروه‌های دیگر مسدود می‌شود.", category: "interaction", icon: "🧵" },
+  { key: "banLinks", title: "Remove links", description: "All URLs and links are removed.", category: "links", icon: "🔗" },
+  { key: "banBots", title: "Block bots", description: "Messages sent by bots are blocked.", category: "links", icon: "🤖" },
+  { key: "banBotInviters", title: "Remove bot inviters", description: "Users who add bots are removed from the group.", category: "links", icon: "⚡" },
+  { key: "banDomains", title: "Block domains", description: "Messages containing a website address are removed.", category: "links", icon: "🌐" },
+  { key: "banUsernames", title: "Block usernames", description: "@username mentions are not allowed.", category: "links", icon: "@" },
+  { key: "banHashtags", title: "Block hashtags", description: "Messages containing # are removed.", category: "text", icon: "#" },
+  { key: "banTextPatterns", title: "Block text patterns", description: "Custom text patterns are not allowed.", category: "text", icon: "📝" },
+  { key: "banForward", title: "Block forwards", description: "Forwarded messages are not allowed.", category: "interaction", icon: "🔁" },
+  { key: "banForwardChannels", title: "Restrict forwards from channels", description: "Only forwards from channels are restricted.", category: "interaction", icon: "📣" },
+  { key: "banPhotos", title: "Block photos", description: "Sending photos is not allowed.", category: "media", icon: "🖼️" },
+  { key: "banStickers", title: "Block stickers", description: "Using stickers is not allowed.", category: "media", icon: "🥲" },
+  { key: "banEmojis", title: "Block emojis", description: "Messages containing emojis are removed.", category: "text", icon: "😀" },
+  { key: "banEmojiOnly", title: "Block emoji-only messages", description: "Messages composed solely of emojis are removed.", category: "text", icon: "😶" },
+  { key: "banLocation", title: "Block locations", description: "Sharing locations is restricted.", category: "media", icon: "📍" },
+  { key: "banPhones", title: "Block phone numbers", description: "Messages containing phone numbers are removed.", category: "text", icon: "📞" },
+  { key: "banAudio", title: "Block audio", description: "Audio files (songs) are blocked.", category: "media", icon: "🎵" },
+  { key: "banVoice", title: "Block voice messages", description: "Voice messages are not allowed.", category: "media", icon: "🎙️" },
+  { key: "banFiles", title: "Block files", description: "Files and documents are removed.", category: "media", icon: "📁" },
+  { key: "banApps", title: "Block app messages", description: "Messages from games or apps are blocked.", category: "interaction", icon: "🕹️" },
+  { key: "banGif", title: "Block GIFs", description: "Sending GIFs is not allowed.", category: "media", icon: "🎞️" },
+  { key: "banPolls", title: "Block polls", description: "Creating polls in the group is not allowed.", category: "interaction", icon: "📊" },
+  { key: "banInlineKeyboards", title: "Block inline keyboards", description: "Messages with inline buttons are removed.", category: "interaction", icon: "🪟" },
+  { key: "banGames", title: "Block games", description: "Game messages are restricted.", category: "interaction", icon: "🎲" },
+  { key: "banSlashCommands", title: "Block slash commands", description: "Slash commands (/command) cannot be used.", category: "interaction", icon: "/" },
+  { key: "banCaptionless", title: "Block captionless posts", description: "Images without captions are removed.", category: "media", icon: "📝" },
+  { key: "banLatin", title: "Block Latin letters", description: "English letters are not allowed in messages.", category: "language", icon: "A" },
+  { key: "banPersian", title: "Block Persian/Arabic letters", description: "Persian or Arabic text is restricted.", category: "language", icon: "FA" },
+  { key: "banCyrillic", title: "Block Cyrillic letters", description: "Cyrillic characters are removed.", category: "language", icon: "CY" },
+  { key: "banChinese", title: "Block Chinese characters", description: "Chinese characters are not allowed.", category: "language", icon: "ZH" },
+  { key: "banUserReplies", title: "Block user replies", description: "Regular members cannot reply to each other.", category: "interaction", icon: "💬" },
+  { key: "banCrossReplies", title: "Block cross-chat replies", description: "Replies from other chats are blocked.", category: "interaction", icon: "🧵" },
 ];
 
 const CATEGORY_GROUPS = [
-  { id: "links", title: "لینک‌ها و آی‌دی" },
-  { id: "text", title: "متن و نشانه‌ها" },
-  { id: "media", title: "رسانه و فایل" },
-  { id: "interaction", title: "تعاملات" },
-  { id: "language", title: "زبان‌ها" },
-  { id: "advanced", title: "پیشرفته" },
+  { id: "links", title: "Links & IDs" },
+  { id: "text", title: "Text & symbols" },
+  { id: "media", title: "Media & files" },
+  { id: "interaction", title: "Interactions" },
+  { id: "language", title: "Languages" },
+  { id: "advanced", title: "Advanced" },
 ];
 
 export function GroupBanSettingsPage() {
@@ -334,7 +334,7 @@ export function GroupBanSettingsPage() {
 
   const handleImportList = useCallback(
     (type: "blacklist" | "whitelist") => {
-      const value = window.prompt("کلمات را با جداکننده خط وارد کن:", "");
+      const value = window.prompt("Enter words separated by new lines:", "");
       if (value === null) {
         return;
       }
@@ -343,7 +343,7 @@ export function GroupBanSettingsPage() {
         .map((line) => line.trim())
         .filter(Boolean);
       updateKeywordList(type, next);
-      setToastMessage("لیست با موفقیت جایگزین شد ✅");
+      setToastMessage("List replaced successfully ✅");
     },
     [updateKeywordList],
   );
@@ -356,10 +356,10 @@ export function GroupBanSettingsPage() {
       const text = settings[type].join("\n");
       try {
         await navigator.clipboard.writeText(text);
-        setToastMessage("لیست در کلیپ‌بورد ذخیره شد ✅");
+        setToastMessage("List copied to clipboard ✅");
       } catch (err) {
         console.error("clipboard error", err);
-        setToastMessage("کپی در کلیپ‌بورد ناموفق بود ❌");
+        setToastMessage("Copy to clipboard failed ❌");
       }
     },
     [settings],
@@ -373,7 +373,7 @@ export function GroupBanSettingsPage() {
       setSaving(true);
       await updateGroupBanSettings(groupId, settings);
       setDirty(false);
-      setToastMessage("تنظیمات با موفقیت ذخیره شد ✅");
+      setToastMessage("Settings saved successfully ✅");
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
@@ -385,9 +385,9 @@ export function GroupBanSettingsPage() {
 
   if (!groupId) {
     return (
-      <Placeholder header="شناسه گروه معتبر نیست" description="برای بازگشت دکمه زیر را لمس کن.">
+      <Placeholder header="Group ID is invalid" description="Tap the button below to go back.">
         <Button mode="filled" onClick={() => navigate("/")}>
-          بازگشت
+          Back
         </Button>
       </Placeholder>
     );
@@ -396,16 +396,16 @@ export function GroupBanSettingsPage() {
   if (loading && !settings) {
     return (
       <div className={styles.loadingState}>
-        <Text weight="2">در حال بارگذاری قوانین...</Text>
+        <Text weight="2">Loading rules...</Text>
       </div>
     );
   }
 
   if (error && !settings) {
     return (
-      <Placeholder header="خطا در بارگذاری" description={error.message}>
+      <Placeholder header="Error loading" description={error.message}>
         <Button mode="filled" onClick={() => navigate(-1)}>
-          بازگشت
+          Back
         </Button>
       </Placeholder>
     );
@@ -417,10 +417,10 @@ export function GroupBanSettingsPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header} dir="rtl">
+      <header className={styles.header} dir="ltr">
         <div className={styles.headerLeft}>
           <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            بازگشت
+            Back
           </Button>
         </div>
         <div className={styles.headerCenter}>
@@ -432,15 +432,15 @@ export function GroupBanSettingsPage() {
           />
           <div className={styles.headerTitles}>
             <Title level="3" className={styles.groupName}>
-              {group ? group.title : "در حال بارگذاری"}
+              {group ? group.title : "Loading"}
             </Title>
             <Text weight="2" className={styles.groupSubtitle}>
-              قوانین ممنوعیت محتوا
+              Content restriction rules
             </Text>
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="نمایش ماژول‌ها" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label="Show modules" onClick={() => setMenuOpen(true)}>
             <span className={styles.burger}>
               <span />
               <span />
@@ -477,7 +477,7 @@ export function GroupBanSettingsPage() {
                       </div>
                       {ruleSetting.enabled && (
                         <ScheduleSection
-                          title="محدوده زمانی اجرا"
+                          title="Execution window"
                           value={ruleSetting.schedule}
                           onModeChange={(mode) =>
                             updateRuleSchedule(rule.key, { ...ruleSetting.schedule, mode })
@@ -499,8 +499,8 @@ export function GroupBanSettingsPage() {
         </div>
 
         <KeywordListCard
-          title="کلمات ممنوعه"
-          description="پیام شامل هر یک از این کلمات حذف می‌شود."
+          title="Banned keywords"
+          description="Messages containing any of these words are removed."
           value={settings.blacklist}
           onChange={(list) => updateKeywordList("blacklist", list)}
           onImport={() => handleImportList("blacklist")}
@@ -508,8 +508,8 @@ export function GroupBanSettingsPage() {
         />
 
         <KeywordListCard
-          title="کلمات ضروری"
-          description="پیام باید حداقل یکی از این کلمات را داشته باشد."
+          title="Required keywords"
+          description="Messages must include at least one of these words."
           value={settings.whitelist}
           onChange={(list) => updateKeywordList("whitelist", list)}
           onImport={() => handleImportList("whitelist")}
@@ -525,7 +525,7 @@ export function GroupBanSettingsPage() {
           disabled={!dirty || saving}
           onClick={handleSave}
         >
-          {saving ? "در حال ذخیره..." : "ذخیره تنظیمات"}
+          {saving ? "Saving..." : "Save settings"}
         </Button>
       </footer>
 

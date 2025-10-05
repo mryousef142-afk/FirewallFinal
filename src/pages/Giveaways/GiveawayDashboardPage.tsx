@@ -6,9 +6,45 @@ import { Page } from "@/components/Page.tsx";
 import { classNames } from "@/css/classnames.ts";
 import { fetchGiveawayDashboard } from "@/features/dashboard/api.ts";
 import type { GiveawayDashboardData, GiveawaySummary } from "@/features/dashboard/types.ts";
-import { toPersianDigits } from "@/utils/format.ts";
+import { formatNumber, toPersianDigits } from "@/utils/format.ts";
 
 import styles from "./GiveawayPages.module.css";
+
+const TEXT = {
+  loading: {
+    header: "Loading",
+    description: "Please wait a moment.",
+  },
+  error: {
+    header: "Unable to fetch data",
+    action: "Retry",
+    empty: "No data available.",
+  },
+  overview: {
+    title: "Manage giveaways",
+    balance: (value: number) => `Balance: ${formatNumber(value)} stars`,
+    create: "Create a new giveaway",
+  },
+  sections: {
+    active: "Active giveaways",
+    past: "Past giveaways",
+  },
+  cards: {
+    group: (title: string) => `Group: ${title}`,
+    winners: (count: number) => `Winners: ${toPersianDigits(count)}`,
+    participants: (count: number) => `Participants: ${toPersianDigits(count)}`,
+    ends: (when: string) => `Ends: ${when}`,
+    starts: (when: string) => `Starts: ${when}`,
+    cost: (value: number) => `Total cost: ${formatNumber(value)} stars`,
+    view: "View public page",
+    empty: "Nothing to show.",
+  },
+  status: {
+    active: "Active",
+    scheduled: "Scheduled",
+    completed: "Completed",
+  },
+};
 
 function formatDateTime(value: string): string {
   try {
@@ -23,12 +59,12 @@ function formatDateTime(value: string): string {
 
 function renderSummaryTag(status: GiveawaySummary["status"]): string {
   if (status === "active") {
-    return "فعال";
+    return TEXT.status.active;
   }
   if (status === "scheduled") {
-    return "برنامه‌ریزی شده";
+    return TEXT.status.scheduled;
   }
-  return "تمام شده";
+  return TEXT.status.completed;
 }
 
 export function GiveawayDashboardPage() {
@@ -61,12 +97,17 @@ export function GiveawayDashboardPage() {
 
   const renderList = (items: GiveawaySummary[]) => {
     if (items.length === 0) {
-      return <Text className={styles.note}>آیتمی موجود نیست.</Text>;
+      return <Text className={styles.note}>{TEXT.cards.empty}</Text>;
     }
     return (
       <div className={styles.list}>
         {items.map((item) => {
-          const tagClass = item.status === "active" ? styles.badgeActive : item.status === "completed" ? styles.badgeCompleted : styles.tag;
+          const tagClass =
+            item.status === "active"
+              ? styles.badgeActive
+              : item.status === "completed"
+                ? styles.badgeCompleted
+                : styles.tag;
           return (
             <div key={item.id} className={styles.card}>
               <div className={styles.sectionHeader}>
@@ -76,18 +117,18 @@ export function GiveawayDashboardPage() {
                 <span className={classNames(styles.tag, tagClass)}>{renderSummaryTag(item.status)}</span>
               </div>
               <div className={styles.tagRow}>
-                <Text>گروه: {item.targetGroup.title}</Text>
-                <Text>برنده‌ها: {toPersianDigits(item.winnersCount)}</Text>
-                <Text>شرکت‌کنندگان: {toPersianDigits(item.participants)}</Text>
+                <Text>{TEXT.cards.group(item.targetGroup.title)}</Text>
+                <Text>{TEXT.cards.winners(item.winnersCount)}</Text>
+                <Text>{TEXT.cards.participants(item.participants)}</Text>
               </div>
               <div className={styles.tagRow}>
-                <Text>پایان: {formatDateTime(item.endsAt)}</Text>
-                <Text>شروع: {formatDateTime(item.startsAt)}</Text>
+                <Text>{TEXT.cards.ends(formatDateTime(item.endsAt))}</Text>
+                <Text>{TEXT.cards.starts(formatDateTime(item.startsAt))}</Text>
               </div>
-              <Text className={styles.note}>هزینه کل: {toPersianDigits(item.prize.totalCost)} ⭐️</Text>
+              <Text className={styles.note}>{TEXT.cards.cost(item.prize.totalCost)}</Text>
               <div className={styles.inline}>
                 <Button mode="plain" size="s" onClick={() => navigate(`/giveaways/${item.id}`)}>
-                  مشاهده صفحه عمومی
+                  {TEXT.cards.view}
                 </Button>
               </div>
             </div>
@@ -100,8 +141,8 @@ export function GiveawayDashboardPage() {
   if (loading) {
     return (
       <Page>
-        <div className={styles.page} dir="rtl">
-          <Placeholder header="در حال بارگذاری" description="لطفاً کمی صبر کنید." />
+        <div className={styles.page} dir="ltr">
+          <Placeholder header={TEXT.loading.header} description={TEXT.loading.description} />
         </div>
       </Page>
     );
@@ -110,10 +151,10 @@ export function GiveawayDashboardPage() {
   if (error || !data) {
     return (
       <Page>
-        <div className={styles.page} dir="rtl">
-          <Placeholder header="خطا در بارگذاری" description={error?.message ?? "امکان دریافت اطلاعات نیست."}>
+        <div className={styles.page} dir="ltr">
+          <Placeholder header={TEXT.error.header} description={error?.message ?? TEXT.error.empty}>
             <Button mode="filled" onClick={load}>
-              تلاش مجدد
+              {TEXT.error.action}
             </Button>
           </Placeholder>
         </div>
@@ -123,16 +164,16 @@ export function GiveawayDashboardPage() {
 
   return (
     <Page>
-      <div className={styles.page} dir="rtl">
+      <div className={styles.page} dir="ltr">
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <Title level="3" className={styles.sectionTitle}>
-              مدیریت گیواوی‌ها
+              {TEXT.overview.title}
             </Title>
             <div className={styles.inline}>
-              <Text weight="2">موجودی فعلی: {toPersianDigits(data.balance)} ⭐️</Text>
+              <Text weight="2">{TEXT.overview.balance(data.balance)}</Text>
               <Button mode="filled" size="s" onClick={() => navigate("/giveaways/create")}>
-                ساخت گیواوی جدید
+                {TEXT.overview.create}
               </Button>
             </div>
           </div>
@@ -140,14 +181,14 @@ export function GiveawayDashboardPage() {
 
         <section className={styles.section}>
           <Title level="3" className={styles.sectionTitle}>
-            گیواوی‌های فعال
+            {TEXT.sections.active}
           </Title>
           {renderList(data.active)}
         </section>
 
         <section className={styles.section}>
           <Title level="3" className={styles.sectionTitle}>
-            گیواوی‌های گذشته
+            {TEXT.sections.past}
           </Title>
           {renderList(data.past)}
         </section>

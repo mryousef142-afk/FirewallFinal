@@ -178,13 +178,13 @@ function makeRemovedGroup(id: string, title: string, membersCount: number, daysS
 function createMockSnapshot(): DashboardSnapshot {
   const now = new Date();
   const groups: ManagedGroup[] = [
-    makeActiveGroup("grp-core", "???? ????", 128, 20),
-    makeActiveGroup("grp-security", "??? ?????", 64, 8),
-    makeActiveGroup("grp-support", "???????? ???????", 52, 3),
-    makeActiveGroup("grp-marketing", "????????", 210, 26),
-    makeActiveGroup("grp-ops", "??????", 89, 14),
-    makeExpiredGroup("grp-expired", "????? ?????", 23, 2),
-    makeRemovedGroup("grp-removed", "?????????", 17, 4),
+    makeActiveGroup("grp-core", "Core Team", 128, 20),
+    makeActiveGroup("grp-security", "Security Watch", 64, 8),
+    makeActiveGroup("grp-support", "Support Center", 52, 3),
+    makeActiveGroup("grp-marketing", "Marketing Hub", 210, 26),
+    makeActiveGroup("grp-ops", "Operations", 89, 14),
+    makeExpiredGroup("grp-expired", "Expired Group", 23, 2),
+    makeRemovedGroup("grp-removed", "Removed Group", 17, 4),
   ];
 
   const filtered = groups.filter((group) => {
@@ -270,8 +270,8 @@ function createBanSettings(id: string): GroupBanSettings {
     };
   });
 
-  const blacklist = ["spam", "promo", "http", "?? ?????", "??????"];
-  const whitelist = ["????????", "??????", "?????", "?????"];
+  const blacklist = ["spam", "promo", "http", "lottery", "casino"];
+  const whitelist = ["support", "docs", "faq", "help"];
 
   return {
     rules,
@@ -458,16 +458,21 @@ function createAnalyticsSnapshot(id: string): GroupAnalyticsSnapshot {
   };
 }
 
+
 const DEFAULT_CUSTOM_TEXTS: CustomTextSettings = {
-  welcomeMessage: "?? ????? {user} ????! ????\n?? {group} ??? ?????! ??\n?????? ???? ?? ?? ???? ???? ?????? ????.",
-  rulesMessage: "{user} ?????\n??? ?????? ???? ??? ??? {group} ????? ??? ???. ????? ?? ?????? ???? ????? ?? ?? ??? ????.",
-  silenceStartMessage: "??? ???? ?????? ???? ??.\n??? ???? ?? {starttime} ?? {endtime} ?? ???? ?????? ???.\n????? ?? ????? ???? ??????? ????.",
-  silenceEndMessage: "????? ???? ?????? ??????? ??.\n???? ?????? ???? ?? {starttime} ???? ????? ??.",
-  warningMessage: "?? ????: {reason}\n?? ?????: {penalty}\n\n?? {user_warnings} ????? ?? {warnings_count}\n?? ?? ????? ??? ?? {warningstime} ??? ??? ????? ??.",
-  forcedInviteMessage: "{user}\n?? ???? ?? ????? ???? ???? {number} ??? ???? ???? ????.\n?? ?????? {added} ??? ???? ??? ????? ??? ???.",
-  mandatoryChannelMessage: "?? ??? ?? ????? ???? ????? ?? ?????(???) ??? ??? ????:\n{channel_names}",
+  welcomeMessage: "Hello {user}!\nWelcome to {group}.\nPlease read the next message to learn the rules.",
+  rulesMessage: "{user}, these guidelines keep {group} safe. Read them carefully before you start chatting.",
+  silenceStartMessage:
+    "Quiet hours are now active.\nMessages are paused from {starttime} until {endtime}.\nThanks for keeping the chat tidy.",
+  silenceEndMessage: "Quiet hours have finished.\nThe next quiet period starts at {starttime}.",
+  warningMessage:
+    "Reason: {reason}\nPenalty: {penalty}\n\nWarning {user_warnings} of {warnings_count}\nEach warning expires after {warningstime} days.",
+  forcedInviteMessage:
+    "{user}\nYou need to invite {number} new member(s) before you can send messages.\nYou have invited {added} so far.",
+  mandatoryChannelMessage:
+    "Please join the required channel(s) below before sending messages:\n{channel_names}",
   promoButtonEnabled: false,
-  promoButtonText: "?? ????? ?? ????? ??",
+  promoButtonText: "Read more",
   promoButtonUrl: "https://t.me/tgfirewall",
 };
 
@@ -478,7 +483,7 @@ function createCustomTextSettings(id: string): CustomTextSettings {
     base.promoButtonEnabled = true;
   }
   if ((seed & 2) === 2) {
-    base.promoButtonText = "?? ????? ?? ?????";
+    base.promoButtonText = "Check updates";
     base.promoButtonUrl = "https://t.me/tgfirewall_news";
   }
   return base;
@@ -494,7 +499,7 @@ export async function fetchGroupDetails(id: string): Promise<GroupDetail> {
   const snapshot = createMockSnapshot();
   const group = snapshot.groups.find((item) => item.id === id);
   if (!group) {
-    throw new Error("???? ???? ???");
+    throw new Error("Group not found.");
   }
   return {
     group,
@@ -644,7 +649,7 @@ function createStarsOverview(): StarsOverview {
 function resolveStarsPlan(planId: string): StarsPlan {
   const plan = STARS_PLANS.find((item) => item.id === planId);
   if (!plan) {
-    throw new Error("??? ?? ????? ????");
+    throw new Error("Stars plan not found.");
   }
   return plan;
 }
@@ -704,7 +709,7 @@ export async function searchGroupsForStars(query: string): Promise<ManagedGroup[
 const giveawayPlans: GiveawayPlanOption[] = STARS_PLANS.map((plan) => ({
   id: `giveaway-${plan.id}`,
   starsPlanId: plan.id,
-  title: `اعتبار ${plan.days} روزه`,
+  title: `${plan.days}-day access`,
   days: plan.days,
   basePrice: plan.price,
   pricePerWinner: Math.round(plan.price * GIVEAWAY_PRICE_MULTIPLIER),
@@ -759,7 +764,7 @@ function createInitialGiveaways(): GiveawaySummary[] {
     const participants = winners * (status === "completed" ? 10 : 6 + index * 2);
     return {
       id: `mock-giveaway-${group.id}`,
-      title: `گیواوی ویژه ${group.title}`,
+      title: `Special giveaway for ${group.title}`,
       status,
       prize: {
         planId: plan.id,
@@ -785,7 +790,7 @@ function createInitialGiveaways(): GiveawaySummary[] {
 function findGiveawayPlan(planId: string): GiveawayPlanOption {
   const plan = giveawayPlans.find((item) => item.id === planId || item.starsPlanId === planId);
   if (!plan) {
-    throw new Error("پلن گیواوی پیدا نشد");
+    throw new Error("Giveaway plan not found");
   }
   return plan;
 }
@@ -794,7 +799,7 @@ function findGroupById(groupId: string): ManagedGroup {
   const snapshot = createMockSnapshot();
   const group = snapshot.groups.find((item) => item.id === groupId);
   if (!group) {
-    throw new Error("گروه مورد نظر یافت نشد");
+    throw new Error("Group not found");
   }
   return cloneGroup(group);
 }
@@ -854,7 +859,7 @@ export async function createGiveaway(payload: GiveawayCreationPayload): Promise<
   const totalCost = computeGiveawayTotal(plan, winners);
   const summary: GiveawaySummary = {
     id: `giveaway-${Date.now()}`,
-    title: payload.title ?? `گیواوی ${group.title}`,
+    title: payload.title ?? `${group.title} giveaway`,
     status: deriveGiveawayStatus(startsAt, endsAt),
     prize: {
       planId: plan.id,
@@ -894,7 +899,7 @@ export async function fetchGiveawayDetail(id: string): Promise<GiveawayDetail> {
   refreshGiveawayStatuses();
   const record = ensureGiveawayRecords().find((item) => item.id === id);
   if (!record) {
-    throw new Error("گیواوی پیدا نشد");
+    throw new Error("Giveaway not found");
   }
   return buildGiveawayDetail(record, giveawayJoins.has(id));
 }
@@ -905,11 +910,11 @@ export async function joinGiveaway(id: string): Promise<GiveawayDetail> {
   const records = ensureGiveawayRecords();
   const index = records.findIndex((item) => item.id === id);
   if (index === -1) {
-    throw new Error("گیواوی پیدا نشد");
+    throw new Error("Giveaway not found");
   }
   const summary = records[index];
   if (summary.status === "completed") {
-    throw new Error("این گیواوی به پایان رسیده است");
+    throw new Error("This giveaway has already finished");
   }
   if (!giveawayJoins.has(id)) {
     giveawayJoins.add(id);
@@ -919,6 +924,7 @@ export async function joinGiveaway(id: string): Promise<GiveawayDetail> {
   giveawayRecords = records;
   return buildGiveawayDetail(records[index], true);
 }
+
 
 
 

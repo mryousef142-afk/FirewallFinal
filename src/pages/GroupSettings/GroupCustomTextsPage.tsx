@@ -49,87 +49,90 @@ type TemplateDefinition = {
   example?: string;
 };
 
+
+
 const DEFAULT_TEXTS: CustomTextSettings = {
-  welcomeMessage: "Ø¨Ø§ Ø³Ù„Ø§Ù…ØŒ {user} Ø¹Ø²ÛŒØ²! ðŸ‘‹ðŸ»\nØ¨Ù‡ {group} Ø®ÙˆØ´ Ø¢Ù…Ø¯ÛŒØ¯! ðŸŒ·\nÙ‚ÙˆØ§Ù†ÛŒÙ† Ú¯Ø±ÙˆÙ‡ Ø±Ø§ Ø¯Ø± Ù¾ÛŒØ§Ù… Ø¨Ø¹Ø¯ÛŒ Ù…Ø·Ø§Ù„Ø¹Ù‡ Ú©Ù†ÛŒØ¯.",
-  rulesMessage: "{user} Ø¹Ø²ÛŒØ²ØŒ\nØ§ÛŒÙ† Ù‚ÙˆØ§Ù†ÛŒÙ† Ø¨Ø±Ø§ÛŒ Ø­ÙØ¸ Ù†Ø¸Ù… {group} ØªØ¯ÙˆÛŒÙ† Ø´Ø¯Ù‡ Ø§Ø³Øª. Ù„Ø·ÙØ§Ù‹ Ø¨Ø§ Ù…Ø·Ø§Ù„Ø¹Ù‡ Ú©Ø§Ù…Ù„ Ø¢Ù†â€ŒÙ‡Ø§ Ø¨Ù‡ Ù…Ø§ Ú©Ù…Ú© Ú©Ù†ÛŒØ¯.",
-  silenceStartMessage: "â°ðŸ˜´ Ø³Ø§Ø¹Øª Ø®Ø§Ù…ÙˆØ´ÛŒ ÙØ¹Ø§Ù„ Ø´Ø¯.\nØ§ÛŒÙ† Ú¯Ø±ÙˆÙ‡ Ø§Ø² {starttime} ØªØ§ {endtime} Ø¯Ø± Ø­Ø§Ù„Øª Ø®Ø§Ù…ÙˆØ´ÛŒ Ø§Ø³Øª.\nÙ„Ø·ÙØ§Ù‹ Ø§Ø² Ø§Ø±Ø³Ø§Ù„ Ù¾ÛŒØ§Ù… Ø®ÙˆØ¯Ø¯Ø§Ø±ÛŒ Ú©Ù†ÛŒØ¯.",
-  silenceEndMessage: "ðŸ‘®ðŸ»â° Ø³Ø§Ø¹Øª Ø®Ø§Ù…ÙˆØ´ÛŒ ØºÛŒØ±ÙØ¹Ø§Ù„ Ø´Ø¯.\nØ³Ø§Ø¹Øª Ø®Ø§Ù…ÙˆØ´ÛŒ Ø¨Ø¹Ø¯ÛŒ Ø§Ø² {starttime} Ø¢ØºØ§Ø² Ø®ÙˆØ§Ù‡Ø¯ Ø´Ø¯.",
-  warningMessage:
-    "â—ï¸ Ø¯Ù„ÛŒÙ„: {reason}\nðŸ”» Ù†ØªÛŒØ¬Ù‡: {penalty}\n\nâš ï¸ {user_warnings} Ø§Ø®Ø·Ø§Ø± Ø§Ø² {warnings_count}\nðŸ’¡ Ù‡Ø± Ø§Ø®Ø·Ø§Ø± Ø¨Ø¹Ø¯ Ø§Ø² {warningstime} Ø±ÙˆØ² Ø­Ø°Ù Ø®ÙˆØ§Ù‡Ø¯ Ø´Ø¯.",
-  forcedInviteMessage:
-    "{user}\nâ—ï¸ Ø¨Ø±Ø§ÛŒ Ø§Ø±Ø³Ø§Ù„ Ù¾ÛŒØ§Ù… Ø¨Ø§ÛŒØ¯ {number} Ø¹Ø¶Ùˆ Ø¬Ø¯ÛŒØ¯ Ø¯Ø¹ÙˆØª Ú©Ù†ÛŒØ¯.\nðŸ”¸ ØªØ§Ú©Ù†ÙˆÙ† {added} Ø¹Ø¶Ùˆ ØªÙˆØ³Ø· Ø´Ù…Ø§ Ø§Ø¶Ø§ÙÙ‡ Ø´Ø¯Ù‡ Ø§Ø³Øª.",
-  mandatoryChannelMessage:
-    "â—ï¸ Ù‚Ø¨Ù„ Ø§Ø² Ø§Ø±Ø³Ø§Ù„ Ù¾ÛŒØ§Ù… Ù„Ø·ÙØ§Ù‹ Ø¯Ø± Ú©Ø§Ù†Ø§Ù„(Ù‡Ø§ÛŒ) Ø²ÛŒØ± Ø¹Ø¶Ùˆ Ø´ÙˆÛŒØ¯:\n{channel_names}",
+  welcomeMessage: "Hello {user}!\nWelcome to {group}.\nPlease read the next message to learn the rules.",
+  rulesMessage: "{user}, these guidelines keep {group} safe. Read them carefully before you start chatting.",
+  silenceStartMessage: "Quiet hours are now active.\nMessages are paused from {starttime} until {endtime}.\nThanks for keeping the chat tidy.",
+  silenceEndMessage: "Quiet hours have finished.\nThe next quiet period starts at {starttime}.",
+  warningMessage: "Reason: {reason}\nPenalty: {penalty}\n\nWarning {user_warnings} of {warnings_count}\nEach warning expires after {warningstime} days.",
+  forcedInviteMessage: "{user}\nYou need to invite {number} new member(s) before you can send messages.\nYou have invited {added} so far.",
+  mandatoryChannelMessage: "Please join the required channel(s) below before sending messages:\n{channel_names}",
   promoButtonEnabled: false,
-  promoButtonText: "ðŸ”¥ Ø¹Ø¶ÙˆÛŒØª Ø¯Ø± Ú©Ø§Ù†Ø§Ù„ Ù…Ø§",
+  promoButtonText: "Read more",
   promoButtonUrl: "https://t.me/tgfirewall",
 };
+
+
 
 const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   {
     key: "welcomeMessage",
-    title: "Ù…Ø­ØªÙˆØ§ÛŒ Ù¾ÛŒØ§Ù… Ø®ÙˆØ´â€ŒØ¢Ù…Ø¯Ú¯ÙˆÛŒÛŒ",
-    description: "Ú©Ù„ÛŒØ¯ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ Ù…Ø¬Ø§Ø²: {user}, {group}",
+    title: "Welcome message",
+    description: "Sent automatically to new members. Use {user} and {group} placeholders.",
     placeholders: ["{user}", "{group}"],
     requiredAny: [["{user}", "{group}"]],
   },
   {
     key: "rulesMessage",
-    title: "Ù…ØªÙ† Ù‚ÙˆØ§Ù†ÛŒÙ†",
-    description: "Ú©Ù„ÛŒØ¯ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ Ù…Ø¬Ø§Ø²: {user}, {group}",
+    title: "Rules reminder",
+    description: "Shown after the welcome message. Reference {user} or {group} as needed.",
     placeholders: ["{user}", "{group}"],
     requiredAny: [["{group}"]],
   },
   {
     key: "silenceStartMessage",
-    title: "Ù…Ø­ØªÙˆØ§ÛŒ Ù¾ÛŒØ§Ù… Ø´Ø±ÙˆØ¹ Ø®Ø§Ù…ÙˆØ´ÛŒ",
-    description: "Ú©Ù„ÛŒØ¯ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ Ù…Ø¬Ø§Ø²: {starttime}, {endtime}",
+    title: "Quiet hours started",
+    description: "Explain when messaging is disabled. Include {starttime} and {endtime}.",
     placeholders: ["{starttime}", "{endtime}"],
     requiredAll: ["{starttime}", "{endtime}"],
   },
   {
     key: "silenceEndMessage",
-    title: "Ù…Ø­ØªÙˆØ§ÛŒ Ù¾ÛŒØ§Ù… Ù¾Ø§ÛŒØ§Ù† Ø®Ø§Ù…ÙˆØ´ÛŒ",
-    description: "Ú©Ù„ÛŒØ¯ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ Ù…Ø¬Ø§Ø²: {starttime}, {endtime}",
+    title: "Quiet hours ended",
+    description: "Let members know when quiet hours finish. Mention {starttime} for the next cycle.",
     placeholders: ["{starttime}", "{endtime}"],
     requiredAll: ["{starttime}", "{endtime}"],
   },
   {
     key: "warningMessage",
-    title: "Ù…ØªÙ† ØªØ°Ú©Ø±Ù‡Ø§ÛŒ Ø±Ø¨Ø§Øª",
-    description: "Ú©Ù„ÛŒØ¯ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ Ù…Ø¬Ø§Ø²: {reason}, {penalty}, {user_warnings}, {warnings_count}, {warningstime}",
+    title: "Warning notification",
+    description:
+      "Sent when a member breaks the rules. Include {reason}, {penalty}, {user_warnings}, {warnings_count}, {warningstime}.",
     placeholders: ["{reason}", "{penalty}", "{user_warnings}", "{warnings_count}", "{warningstime}"],
     requiredAll: ["{reason}", "{penalty}", "{user_warnings}", "{warnings_count}", "{warningstime}"],
   },
   {
     key: "forcedInviteMessage",
-    title: "Ù…ØªÙ† Ù¾ÛŒØ§Ù… Ø§Ø¯ Ø§Ø¬Ø¨Ø§Ø±ÛŒ",
-    description: "Ú©Ù„ÛŒØ¯ÙˆØ§Ú˜Ù‡â€ŒÙ‡Ø§ÛŒ Ù…Ø¬Ø§Ø²: {user}, {number}, {added}",
+    title: "Invite requirement",
+    description: "Used when members must invite others. Use {user}, {number}, and {added}.",
     placeholders: ["{user}", "{number}", "{added}"],
     requiredAll: ["{number}", "{added}"],
   },
   {
     key: "mandatoryChannelMessage",
-    title: "Ù…ØªÙ† Ù¾ÛŒØ§Ù… Ø¹Ø¶ÙˆÛŒØª Ø§Ø¬Ø¨Ø§Ø±ÛŒ Ø¯Ø± Ú©Ø§Ù†Ø§Ù„",
-    description: "Ú©Ù„ÛŒØ¯ÙˆØ§Ú˜Ù‡ Ù…Ø¬Ø§Ø²: {channel_names}",
+    title: "Channels to join",
+    description: "List the channels members must join. Include {channel_names}.",
     placeholders: ["{channel_names}"],
     requiredAll: ["{channel_names}"],
   },
 ];
 
+
 const PREVIEW_DATA: Record<string, string> = {
-  user: "Ali",
-  group: "DevChat",
+  user: "Alex",
+  group: "Developers Hub",
   starttime: "22:00",
   endtime: "07:00",
-  reason: "Ø§Ø±Ø³Ø§Ù„ Ø§Ø³Ù¾Ù…",
-  penalty: "Ø³Ú©ÙˆØª 24 Ø³Ø§Ø¹Øª",
+  reason: "Spamming links",
+  penalty: "Muted for 24 hours",
   user_warnings: "2",
   warnings_count: "3",
   warningstime: "7",
   number: "2",
   added: "1",
-  channel_names: "@devchat @devnews",
+  channel_names: "@devhub @newsroom",
 };
 
 const VALID_BUTTON_PROTOCOLS = ["https://", "tg://"] as const;
@@ -288,51 +291,55 @@ export function GroupCustomTextsPage() {
     setToastMessage("");
   }, []);
 
-  const validationErrors = useMemo(() => {
-    if (!settings) {
-      return {} as Record<TemplateKey, string>;
+  
+const validationErrors = useMemo(() => {
+  if (!settings) {
+    return {} as Record<TemplateKey, string>;
+  }
+  const errors: Partial<Record<TemplateKey, string>> = {};
+  TEMPLATE_DEFINITIONS.forEach((template) => {
+    const value = settings[template.key].trim();
+    if (!value) {
+      return;
     }
-    const errors: Partial<Record<TemplateKey, string>> = {};
-    TEMPLATE_DEFINITIONS.forEach((template) => {
-      const value = settings[template.key].trim();
-      if (!value) {
+    if (template.requiredAll) {
+      const missing = template.requiredAll.filter((token) => !value.includes(token));
+      if (missing.length > 0) {
+        errors[template.key] = `Missing required placeholders: ${missing.join(", ")}.`;
         return;
       }
-      if (template.requiredAll) {
-        const missing = template.requiredAll.filter((token) => !value.includes(token));
-        if (missing.length > 0) {
-          errors[template.key] = `??? ???? ???? ???? ${missing.join("? ")} ????.`;
-          return;
-        }
+    }
+    if (template.requiredAny) {
+      const satisfiesAny = template.requiredAny.some((groupTokens) =>
+        groupTokens.some((token) => value.includes(token)),
+      );
+      if (!satisfiesAny) {
+        const options = template.requiredAny
+          .map((groupTokens) => groupTokens.join(" or "))
+          .join(", ");
+        errors[template.key] = `Include at least one of: ${options}.`;
       }
-      if (template.requiredAny) {
-        const anyGroupMissing = template.requiredAny.some((groupTokens) =>
-          groupTokens.every((token) => !value.includes(token)),
-        );
-        if (anyGroupMissing) {
-          const tokensText = template.requiredAny
-            .map((groupTokens) => groupTokens.join(" ?? "))
-            .join("? ");
-          errors[template.key] = `??? ???? ???? ???? ${tokensText} ????.`;
-        }
-      }
-    });
-    return errors as Record<TemplateKey, string>;
-  }, [settings]);
+    }
+  });
+  return errors as Record<TemplateKey, string>;
+}, [settings]);
 
-  const promoButtonError = useMemo(() => {
-    if (!settings) {
-      return "";
-    }
-    if (settings.promoButtonEnabled && settings.promoButtonText.trim().length === 0) {
-      return "????? ??? ???? ?? ???? ????.";
-    }
-    const url = settings.promoButtonUrl.trim();
-    if (url.length > 0 && !VALID_BUTTON_PROTOCOLS.some((protocol) => url.startsWith(protocol))) {
-      return "???? ???? ?? https:// ?? tg:// ???? ???.";
-    }
+
+  
+const promoButtonError = useMemo(() => {
+  if (!settings) {
     return "";
-  }, [settings]);
+  }
+  if (settings.promoButtonEnabled && settings.promoButtonText.trim().length === 0) {
+    return "Button text is required when the promo button is enabled.";
+  }
+  const url = settings.promoButtonUrl.trim();
+  if (url.length > 0 && !VALID_BUTTON_PROTOCOLS.some((protocol) => url.startsWith(protocol))) {
+    return "Only https:// or tg:// links are allowed.";
+  }
+  return "";
+}, [settings]);
+
 
   const hasErrors = useMemo(() => {
     if (!settings) {
@@ -357,10 +364,10 @@ export function GroupCustomTextsPage() {
       const next = await updateGroupCustomTextSettings(groupId, settings);
       setSettings(next);
       setDirty(false);
-      setToastMessage("??????? ?? ?????? ????? ??.");
+      setToastMessage("Custom texts saved successfully.");
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      setToastMessage(`????? ??????? ?? ??? ????? ??: ${message}`);
+      setToastMessage(`Failed to save custom texts: ${message}`);
     } finally {
       setSaving(false);
     }
@@ -368,17 +375,17 @@ export function GroupCustomTextsPage() {
 
   if (loading && !settings) {
     return (
-      <div className={styles.loadingState} dir="rtl">
-        <Text weight="2">?? ??? ???????? ???????...</Text>
+      <div className={styles.loadingState} dir="ltr">
+        <Text weight="2">Loading custom texts...</Text>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Placeholder header="??? ?? ?????? ???????" description={error.message}>
+      <Placeholder header="Unable to load custom texts" description={error.message}>
         <Button mode="filled" onClick={() => navigate(-1)}>
-          ??????
+          Back
         </Button>
       </Placeholder>
     );
@@ -386,9 +393,9 @@ export function GroupCustomTextsPage() {
 
   if (!settings) {
     return (
-      <Placeholder header="??????? ?? ????? ????">
+      <Placeholder header="No custom texts available">
         <Button mode="filled" onClick={() => navigate(-1)}>
-          ??????
+          Back
         </Button>
       </Placeholder>
     );
@@ -397,11 +404,11 @@ export function GroupCustomTextsPage() {
   const canSave = dirty && !saving && !hasErrors;
 
   return (
-    <div className={styles.page} dir="rtl">
+    <div className={styles.page} dir="ltr">
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            ??????
+            Back
           </Button>
         </div>
         <div className={styles.headerCenter}>
@@ -413,15 +420,13 @@ export function GroupCustomTextsPage() {
           />
           <div className={styles.headerTitles}>
             <Title level="3" className={styles.groupName}>
-              {group ? group.title : "???? ????????"}
+              {group ? group.title : "Loading..."}
             </Title>
-            <Text weight="2" className={styles.groupSubtitle}>
-              ??????? ??????
-            </Text>
+            <Text weight="2" className={styles.groupSubtitle}>Custom text templates</Text>
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="???? ????" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label="Open menu" onClick={() => setMenuOpen(true)}>
             <span className={styles.burger}>
               <span />
               <span />
@@ -432,9 +437,7 @@ export function GroupCustomTextsPage() {
       </header>
 
       <main className={styles.body}>
-        <Text weight="2" className={styles.notice}>
-          ???? ?? ???? ????????? ??? ?????? ???????. ?? ???? ???? ???? ?? ????? ??? ??????? ???? ??????? ??????.
-        </Text>
+        <Text weight="2" className={styles.notice}>Adjust the automated messages that the bot sends. Use the previews to verify placeholders.</Text>
 
         <div className={styles.cards}>
           {TEMPLATE_DEFINITIONS.map((template) => {
@@ -452,9 +455,7 @@ export function GroupCustomTextsPage() {
                     </Text>
                   </div>
                   <div className={styles.buttonRow}>
-                    <Button mode="outline" size="s" onClick={() => handleResetTemplate(template.key)}>
-                      ???????? ?? ???????
-                    </Button>
+                    <Button mode="outline" size="s" onClick={() => handleResetTemplate(template.key)}>Restore default</Button>
                   </div>
                 </div>
                 <Textarea
@@ -464,7 +465,7 @@ export function GroupCustomTextsPage() {
                 />
                 <div className={styles.textareaFooter}>
                   <Text weight="2" className={styles.charCounter}>
-                    {value.length} ???????
+                    {value.length} characters
                   </Text>
                 </div>
                 {errorMessage && (
@@ -480,25 +481,23 @@ export function GroupCustomTextsPage() {
           <Card className={styles.card}>
             <div className={styles.cardHeader}>
               <div className={styles.headerMain}>
-                <Title level="3" className={styles.cardTitle}>???? ??????? ????????</Title>
-                <Text weight="2" className={styles.cardHint}>
-                  ?? ???? ???? ????? ??? ???????? ???? ???? ????? ???? ??????. ??? ???? ???? ????? ???? ????? ???? ?????? ??.
-                </Text>
+                <Title level="3" className={styles.cardTitle}>Promo button</Title>
+                <Text weight="2" className={styles.cardHint}>Use the promo button to highlight an external link in automated messages. Provide a short label and a valid URL.</Text>
               </div>
               <Switch checked={settings.promoButtonEnabled} onChange={handlePromoToggle} />
             </div>
             <div className={styles.field}>
               <div className={styles.fieldRow}>
-                <Text weight="2" className={styles.cardHint}>??? ????</Text>
+                <Text weight="2" className={styles.cardHint}>Button text</Text>
                 <Input
                   value={settings.promoButtonText}
                   maxLength={30}
                   onChange={handlePromoTextChange}
-                  placeholder="?? ????? ?? ????? ??"
+                  placeholder="Enter button text"
                 />
               </div>
               <div className={styles.fieldRow}>
-                <Text weight="2" className={styles.cardHint}>???? ????</Text>
+                <Text weight="2" className={styles.cardHint}>Button link</Text>
                 <Input
                   value={settings.promoButtonUrl}
                   onChange={handlePromoUrlChange}
@@ -509,9 +508,7 @@ export function GroupCustomTextsPage() {
                 <Text weight="2" className={styles.charCounter}>
                   {settings.promoButtonText.length} / 30
                 </Text>
-                <Button mode="outline" size="s" onClick={handleResetButton}>
-                  ???????? ????
-                </Button>
+                <Button mode="outline" size="s" onClick={handleResetButton}>Reset button</Button>
               </div>
               {promoButtonError && (
                 <Text weight="2" className={styles.errorText}>
@@ -520,8 +517,9 @@ export function GroupCustomTextsPage() {
               )}
               <div className={styles.previewBox}>
                 {settings.promoButtonEnabled && settings.promoButtonText.trim()
-                  ? `????: ${settings.promoButtonText}\n????: ${settings.promoButtonUrl || "(???? ????)"}`
-                  : "???? ??????? ???."}
+                  ? `Text: ${settings.promoButtonText}
+Link: ${settings.promoButtonUrl || "(not set)"}`
+                  : "Promo button disabled."}
               </div>
             </div>
           </Card>
@@ -530,7 +528,7 @@ export function GroupCustomTextsPage() {
 
       <footer className={styles.saveBar}>
         <Button mode="filled" size="l" stretched disabled={!canSave} onClick={handleSave}>
-          {saving ? "?? ??? ?????..." : "????? ???????"}
+          {saving ? "Saving..." : "Save changes"}
         </Button>
       </footer>
 
@@ -549,4 +547,5 @@ export function GroupCustomTextsPage() {
     </div>
   );
 }
+
 

@@ -24,7 +24,7 @@ export function ProfileHeader({ displayName, username, avatarUrl }: ProfileHeade
   const acronym = buildInitials(displayName);
 
   return (
-    <header className={styles.header} dir="rtl">
+    <header className={styles.header} dir="ltr">
       <Avatar
         size={96}
         src={avatarUrl ?? undefined}
@@ -36,7 +36,7 @@ export function ProfileHeader({ displayName, username, avatarUrl }: ProfileHeade
           {displayName}
         </Title>
         <Text className={styles.username} weight="2">
-          {username ? `@${username}` : "یوزرنیم ثبت نشده"}
+          {username ? `@${username}` : "??? ?????? ????? ????"}
         </Text>
       </div>
     </header>

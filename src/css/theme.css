@@ -1,0 +1,68 @@
+:root {
+  color-scheme: light;
+  --app-font-family: "Inter", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+  --app-font-size-base: 16px;
+  --app-line-height-base: 1.5;
+
+  --app-color-background: #f5f7fa;
+  --app-color-surface: #ffffff;
+  --app-color-surface-muted: #f9fafb;
+  --app-color-border: rgba(15, 23, 42, 0.08);
+  --app-color-outline: rgba(15, 23, 42, 0.12);
+
+  --app-color-text-primary: #0f172a;
+  --app-color-text-secondary: rgba(15, 23, 42, 0.72);
+  --app-color-text-muted: rgba(15, 23, 42, 0.56);
+
+  --app-color-success: #16a34a;
+  --app-color-warning: #f59e0b;
+  --app-color-danger: #ef4444;
+
+  --app-color-accent-blue: #2563eb;
+  --app-color-accent-green: #10b981;
+  --app-color-accent-purple: #8b5cf6;
+  --app-color-accent-orange: #f97316;
+
+  --app-radius-xs: 6px;
+  --app-radius-sm: 10px;
+  --app-radius-md: 16px;
+  --app-radius-lg: 20px;
+  --app-radius-xl: 28px;
+
+  --app-shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --app-shadow-md: 0 10px 32px rgba(15, 23, 42, 0.12);
+  --app-shadow-lg: 0 18px 48px rgba(15, 23, 42, 0.18);
+
+  --app-spacing-2xs: 4px;
+  --app-spacing-xs: 8px;
+  --app-spacing-sm: 12px;
+  --app-spacing-md: 16px;
+  --app-spacing-lg: 20px;
+  --app-spacing-xl: 28px;
+  --app-spacing-2xl: 36px;
+
+  --app-input-height: 48px;
+  --app-border-width: 1px;
+  --app-card-max-width: 860px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --app-color-background: #0b1220;
+  --app-color-surface: #111827;
+  --app-color-surface-muted: #162036;
+  --app-color-border: rgba(148, 163, 184, 0.22);
+  --app-color-outline: rgba(148, 163, 184, 0.35);
+
+  --app-color-text-primary: #f8fafc;
+  --app-color-text-secondary: rgba(226, 232, 240, 0.82);
+  --app-color-text-muted: rgba(203, 213, 225, 0.6);
+
+  --app-color-success: #22c55e;
+  --app-color-warning: #fbbf24;
+  --app-color-danger: #f87171;
+
+  --app-shadow-sm: 0 6px 24px rgba(0, 0, 0, 0.32);
+  --app-shadow-md: 0 12px 36px rgba(0, 0, 0, 0.38);
+  --app-shadow-lg: 0 20px 56px rgba(0, 0, 0, 0.4);
+}

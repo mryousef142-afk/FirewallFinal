@@ -14,6 +14,19 @@ import './index.css';
 // Mock the environment in case, we are outside Telegram.
 import './mockEnv.ts';
 
+const rootElement = document.documentElement;
+if (!rootElement.hasAttribute('data-theme')) {
+  rootElement.setAttribute('data-theme', 'dark');
+}
+
+const preventGesture = (event: Event) => {
+  event.preventDefault();
+};
+
+document.addEventListener('gesturestart', preventGesture, { passive: false });
+document.addEventListener('gesturechange', preventGesture, { passive: false });
+document.addEventListener('gestureend', preventGesture, { passive: false });
+
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
 try {
@@ -38,3 +51,4 @@ try {
 } catch (e) {
   root.render(<EnvUnsupported/>);
 }
+

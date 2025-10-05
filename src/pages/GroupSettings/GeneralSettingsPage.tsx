@@ -39,12 +39,12 @@ type ScheduleSectionProps = {
 };
 
 const TIMEZONE_OPTIONS = [
-  { value: "UTC", label: "UTC (جهانی)" },
-  { value: "Asia/Tehran", label: "Asia/Tehran (تهران)" },
-  { value: "Europe/Istanbul", label: "Europe/Istanbul (استانبول)" },
-  { value: "Europe/London", label: "Europe/London (لندن)" },
-  { value: "America/New_York", label: "America/New_York (نیویورک)" },
-  { value: "Asia/Dubai", label: "Asia/Dubai (دبی)" },
+  { value: "UTC", label: "UTC (Global)" },
+  { value: "Asia/Tehran", label: "Asia/Tehran (Tehran)" },
+  { value: "Europe/Istanbul", label: "Europe/Istanbul (Istanbul)" },
+  { value: "Europe/London", label: "Europe/London (London)" },
+  { value: "America/New_York", label: "America/New_York (New York)" },
+  { value: "Asia/Dubai", label: "Asia/Dubai (Dubai)" },
 ];
 
 function ScheduleSection({ title, value, disabled, onModeChange, onStartChange, onEndChange }: ScheduleSectionProps) {
@@ -60,14 +60,14 @@ function ScheduleSection({ title, value, disabled, onModeChange, onStartChange, 
           disabled={disabled}
           onChange={(event) => onModeChange(event.target.value as TimeRangeMode)}
         >
-          <option value="all">فعال در تمام ساعات</option>
-          <option value="custom">فقط در ساعات مشخص</option>
+          <option value="all">Active at all hours</option>
+          <option value="custom">Only during specific hours</option>
         </select>
       </div>
       {value.mode === "custom" && (
         <div className={styles.timeRange}>
           <label className={styles.timeItem}>
-            <span>از</span>
+            <span>From</span>
             <Input
               type="time"
               value={value.start}
@@ -76,7 +76,7 @@ function ScheduleSection({ title, value, disabled, onModeChange, onStartChange, 
             />
           </label>
           <label className={styles.timeItem}>
-            <span>تا</span>
+            <span>To</span>
             <Input
               type="time"
               value={value.end}
@@ -232,7 +232,7 @@ export function GroupGeneralSettingsPage() {
       setSaving(true);
       await updateGroupGeneralSettings(groupId, settings);
       setDirty(false);
-      setToastMessage("تنظیمات با موفقیت ذخیره شد ✅");
+      setToastMessage("Settings saved successfully ✅");
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
@@ -244,9 +244,9 @@ export function GroupGeneralSettingsPage() {
 
   if (!groupId) {
     return (
-      <Placeholder header="شناسه گروه معتبر نیست" description="برای بازگشت دکمه زیر را لمس کن.">
+      <Placeholder header="Group ID is invalid" description="Tap the button below to go back.">
         <Button mode="filled" onClick={() => navigate("/")}>
-          بازگشت
+          Back
         </Button>
       </Placeholder>
     );
@@ -255,16 +255,16 @@ export function GroupGeneralSettingsPage() {
   if (loading && !settings) {
     return (
       <div className={styles.loadingState}>
-        <Text weight="2">در حال بارگذاری تنظیمات...</Text>
+        <Text weight="2">Loading settings...</Text>
       </div>
     );
   }
 
   if (error && !settings) {
     return (
-      <Placeholder header="خطا در بارگذاری" description={error.message}>
+      <Placeholder header="Error loading" description={error.message}>
         <Button mode="filled" onClick={() => navigate(-1)}>
-          بازگشت
+          Back
         </Button>
       </Placeholder>
     );
@@ -276,10 +276,10 @@ export function GroupGeneralSettingsPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header} dir="rtl">
+      <header className={styles.header} dir="ltr">
         <div className={styles.headerLeft}>
           <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            بازگشت
+            Back
           </Button>
         </div>
         <div className={styles.headerCenter}>
@@ -291,15 +291,15 @@ export function GroupGeneralSettingsPage() {
           />
           <div className={styles.headerTitles}>
             <Title level="3" className={styles.groupName}>
-              {group ? group.title : "در حال بارگذاری"}
+              {group ? group.title : "Loading"}
             </Title>
             <Text weight="2" className={styles.groupSubtitle}>
-              تنظیمات عمومی
+              General settings
             </Text>
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="نمایش ماژول‌ها" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label="Show modules" onClick={() => setMenuOpen(true)}>
             <span className={styles.burger}>
               <span />
               <span />
@@ -313,9 +313,9 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>منطقه زمانی</Title>
+              <Title level="3" className={styles.cardTitle}>Time zone</Title>
               <Text weight="2" className={styles.cardHint}>
-                همه زمان‌بندی‌ها بر اساس این انتخاب محاسبه می‌شوند.
+                All schedules will use this selection.
               </Text>
             </div>
           </div>
@@ -337,8 +337,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>پیام خوش‌آمد</Title>
-              <Text weight="2" className={styles.cardHint}>ارسال پیام خوش‌آمد به اعضای جدید.</Text>
+              <Title level="3" className={styles.cardTitle}>Welcome message</Title>
+              <Text weight="2" className={styles.cardHint}>Send a welcome message to new members.</Text>
             </div>
             <Switch
               checked={settings.welcomeEnabled}
@@ -347,7 +347,7 @@ export function GroupGeneralSettingsPage() {
           </div>
           {settings.welcomeEnabled && (
             <ScheduleSection
-              title="محدوده زمانی اجرا"
+              title="Execution window"
               value={settings.welcomeSchedule}
               onModeChange={(mode) => updateSchedule("welcomeSchedule", { ...settings.welcomeSchedule, mode })}
               onStartChange={(value) => updateSchedule("welcomeSchedule", { ...settings.welcomeSchedule, start: value })}
@@ -359,8 +359,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>رأی‌گیری برای میوت</Title>
-              <Text weight="2" className={styles.cardHint}>با رأی اعضا، کاربر خاطی موقتاً میوت می‌شود.</Text>
+              <Title level="3" className={styles.cardTitle}>Vote to mute</Title>
+              <Text weight="2" className={styles.cardHint}>Members can vote to temporarily mute violating users.</Text>
             </div>
             <Switch
               checked={settings.voteMuteEnabled}
@@ -372,8 +372,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>پیام تذکر</Title>
-              <Text weight="2" className={styles.cardHint}>حذف پیام خلاف قوانین و ارسال هشدار در گروه.</Text>
+              <Title level="3" className={styles.cardTitle}>Warning message</Title>
+              <Text weight="2" className={styles.cardHint}>Delete rule-breaking messages and post a warning in the group.</Text>
             </div>
             <Switch
               checked={settings.warningEnabled}
@@ -382,7 +382,7 @@ export function GroupGeneralSettingsPage() {
           </div>
           {settings.warningEnabled && (
             <ScheduleSection
-              title="محدوده زمانی اجرا"
+              title="Execution window"
               value={settings.warningSchedule}
               onModeChange={(mode) => updateSchedule("warningSchedule", { ...settings.warningSchedule, mode })}
               onStartChange={(value) => updateSchedule("warningSchedule", { ...settings.warningSchedule, start: value })}
@@ -394,8 +394,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>حالت بی‌صدا</Title>
-              <Text weight="2" className={styles.cardHint}>در حالت فعال، پیام‌های ربات بدون اعلان صوتی ارسال می‌شوند.</Text>
+              <Title level="3" className={styles.cardTitle}>Silent mode</Title>
+              <Text weight="2" className={styles.cardHint}>When enabled, bot messages are sent without sound notifications.</Text>
             </div>
             <Switch
               checked={settings.silentModeEnabled}
@@ -407,8 +407,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>حذف خودکار پیام‌های ربات</Title>
-              <Text weight="2" className={styles.cardHint}>پس از گذشت مدت مشخص پیام‌های ربات حذف شوند.</Text>
+              <Title level="3" className={styles.cardTitle}>Auto-delete bot messages</Title>
+              <Text weight="2" className={styles.cardHint}>Remove bot messages after the specified duration.</Text>
             </div>
             <Switch
               checked={settings.autoDeleteEnabled}
@@ -417,7 +417,7 @@ export function GroupGeneralSettingsPage() {
           </div>
           {settings.autoDeleteEnabled && (
             <div className={styles.fieldRow}>
-              <label className={styles.fieldLabel}>زمان حذف (دقیقه)</label>
+              <label className={styles.fieldLabel}>Deletion time (minutes)</label>
               <Input
                 type="number"
                 min={1}
@@ -431,8 +431,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>محاسبه تخلفات مدیران</Title>
-              <Text weight="2" className={styles.cardHint}>در صورت فعال بودن، تخلفات مدیران هم ثبت می‌شود.</Text>
+              <Title level="3" className={styles.cardTitle}>Track admin violations</Title>
+              <Text weight="2" className={styles.cardHint}>Track admin violations when enabled.</Text>
             </div>
             <Switch
               checked={settings.countAdminViolationsEnabled}
@@ -446,14 +446,14 @@ export function GroupGeneralSettingsPage() {
                   checked={settings.countAdminsOnly}
                   onChange={(event) => updateSettings({ countAdminsOnly: event.target.checked })}
                 />
-                <span>فقط تخلفات ثبت شود</span>
+                <span>Only log violations</span>
               </label>
               <label className={styles.optionItem}>
                 <Switch
                   checked={settings.deleteAdminViolations}
                   onChange={(event) => updateSettings({ deleteAdminViolations: event.target.checked })}
                 />
-                <span>در صورت تخلف، پیام مدیر حذف شود</span>
+                <span>Delete the admin's message on violation</span>
               </label>
             </div>
           )}
@@ -462,8 +462,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>احراز هویت کاربران جدید</Title>
-              <Text weight="2" className={styles.cardHint}>کاربر تازه‌وارد تا زمان تأیید نمی‌تواند پیام ارسال کند.</Text>
+              <Title level="3" className={styles.cardTitle}>Verify new members</Title>
+              <Text weight="2" className={styles.cardHint}>New members cannot send messages until verified.</Text>
             </div>
             <Switch
               checked={settings.userVerificationEnabled}
@@ -472,7 +472,7 @@ export function GroupGeneralSettingsPage() {
           </div>
           {settings.userVerificationEnabled && (
             <ScheduleSection
-              title="زمان اجرای احراز هویت"
+              title="Verification schedule"
               value={settings.userVerificationSchedule}
               onModeChange={(mode) =>
                 updateSchedule("userVerificationSchedule", { ...settings.userVerificationSchedule, mode })
@@ -490,8 +490,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>دستورات عمومی</Title>
-              <Text weight="2" className={styles.cardHint}>از اجرای دستورات عمومی توسط اعضا جلوگیری شود.</Text>
+              <Title level="3" className={styles.cardTitle}>Public commands</Title>
+              <Text weight="2" className={styles.cardHint}>Prevent members from using public commands.</Text>
             </div>
             <Switch
               checked={settings.disablePublicCommands}
@@ -500,7 +500,7 @@ export function GroupGeneralSettingsPage() {
           </div>
           {settings.disablePublicCommands && (
             <ScheduleSection
-              title="بازه اعمال محدودیت"
+              title="Restriction window"
               value={settings.disablePublicCommandsSchedule}
               onModeChange={(mode) =>
                 updateSchedule("disablePublicCommandsSchedule", {
@@ -527,8 +527,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>حذف پیام‌های ورود و خروج</Title>
-              <Text weight="2" className={styles.cardHint}>پیام‌های ورود و خروج کاربران نمایش داده نشود.</Text>
+              <Title level="3" className={styles.cardTitle}>Hide join and leave messages</Title>
+              <Text weight="2" className={styles.cardHint}>Do not show join and leave notifications.</Text>
             </div>
             <Switch
               checked={settings.removeJoinLeaveMessages}
@@ -537,7 +537,7 @@ export function GroupGeneralSettingsPage() {
           </div>
           {settings.removeJoinLeaveMessages && (
             <ScheduleSection
-              title="بازه حذف پیام‌ها"
+              title="Message removal window"
               value={settings.removeJoinLeaveSchedule}
               onModeChange={(mode) =>
                 updateSchedule("removeJoinLeaveSchedule", { ...settings.removeJoinLeaveSchedule, mode })
@@ -555,9 +555,9 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>مجازات پیش‌فرض سامانه</Title>
+              <Title level="3" className={styles.cardTitle}>Default system penalty</Title>
               <Text weight="2" className={styles.cardHint}>
-                این مجازات برای سایر ماژول‌ها به‌عنوان پیش‌فرض استفاده می‌شود مگر اینکه override شود.
+                This penalty is used as the default for other modules unless they override it.
               </Text>
             </div>
           </div>
@@ -567,9 +567,9 @@ export function GroupGeneralSettingsPage() {
               value={settings.defaultPenalty}
               onChange={(event) => updateSettings({ defaultPenalty: event.target.value as AutoWarningPenalty })}
             >
-              <option value="delete">حذف پیام</option>
-              <option value="mute">میوت</option>
-              <option value="kick">اخراج</option>
+              <option value="delete">Delete message</option>
+              <option value="mute">Mute</option>
+              <option value="kick">Kick</option>
             </select>
           </div>
         </Card>
@@ -577,8 +577,8 @@ export function GroupGeneralSettingsPage() {
         <Card className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <Title level="3" className={styles.cardTitle}>شمارش اخطار خودکار</Title>
-              <Text weight="2" className={styles.cardHint}>پس از عبور از آستانه، مجازات پیش‌فرض فعال می‌شود.</Text>
+              <Title level="3" className={styles.cardTitle}>Automatic warning counter</Title>
+              <Text weight="2" className={styles.cardHint}>Once the threshold is exceeded, the default penalty is applied.</Text>
             </div>
             <Switch
               checked={settings.autoWarningEnabled}
@@ -588,7 +588,7 @@ export function GroupGeneralSettingsPage() {
           {settings.autoWarningEnabled && (
             <div className={styles.autoWarningFields}>
               <div className={styles.fieldRow}>
-                <label className={styles.fieldLabel}>تعداد مجاز اخطارها</label>
+                <label className={styles.fieldLabel}>Allowed warning count</label>
                 <Input
                   type="number"
                   min={1}
@@ -597,7 +597,7 @@ export function GroupGeneralSettingsPage() {
                 />
               </div>
               <div className={styles.fieldRow}>
-                <label className={styles.fieldLabel}>بازه نگهداشت (روز)</label>
+                <label className={styles.fieldLabel}>Retention period (days)</label>
                 <Input
                   type="number"
                   min={1}
@@ -606,19 +606,19 @@ export function GroupGeneralSettingsPage() {
                 />
               </div>
               <div className={styles.fieldRow}>
-                <label className={styles.fieldLabel}>مجازات پیش‌فرض اخطار</label>
+                <label className={styles.fieldLabel}>Default warning penalty</label>
                 <select
                   className={styles.select}
                   value={settings.autoWarning.penalty}
                   onChange={(event) => updateAutoWarning({ penalty: event.target.value as AutoWarningPenalty })}
                 >
-                  <option value="delete">حذف پیام</option>
-                  <option value="mute">میوت</option>
-                  <option value="kick">اخراج</option>
+                  <option value="delete">Delete message</option>
+                  <option value="mute">Mute</option>
+                  <option value="kick">Kick</option>
                 </select>
               </div>
               <ScheduleSection
-                title="محدوده زمانی اجرا"
+                title="Execution window"
                 value={settings.autoWarning.schedule}
                 onModeChange={(mode) => updateAutoWarning({ schedule: { ...settings.autoWarning.schedule, mode } })}
                 onStartChange={(value) => updateAutoWarning({ schedule: { ...settings.autoWarning.schedule, start: value } })}
@@ -637,7 +637,7 @@ export function GroupGeneralSettingsPage() {
           disabled={!dirty || saving}
           onClick={handleSave}
         >
-          {saving ? "در حال ذخیره..." : "ذخیره تنظیمات"}
+          {saving ? "Saving..." : "Save settings"}
         </Button>
       </footer>
 

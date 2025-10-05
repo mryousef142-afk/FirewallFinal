@@ -28,7 +28,7 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <Card className={classNames(styles.card, styles[`cardTone-${tone}`])} type="plain">
-      <div className={styles.wrapper} dir="rtl">
+      <div className={styles.wrapper} dir="ltr">
         <div className={styles.headerRow}>
           <span className={styles.icon}>{icon}</span>
           <Text weight="2" className={styles.title}>

@@ -17,7 +17,7 @@ import type {
   GiveawayPlanOption,
   ManagedGroup,
 } from "@/features/dashboard/types.ts";
-import { toPersianDigits } from "@/utils/format.ts";
+import { formatNumber, toPersianDigits } from "@/utils/format.ts";
 
 import styles from "./GiveawayPages.module.css";
 
@@ -27,6 +27,78 @@ const MIN_DURATION = 1;
 type LocationState = {
   focusGroupId?: string;
 };
+
+const TEXT = {
+  loading: {
+    header: "Loading",
+    description: "Please wait a moment.",
+  },
+  error: {
+    header: "Unable to load giveaway data",
+    description: "We couldn't fetch enough information to create a giveaway.",
+    action: "Retry",
+  },
+  header: {
+    title: "Create Giveaway",
+    manage: "Manage giveaways",
+  },
+  group: {
+    title: "Choose the host group",
+    statusActive: "Active",
+    statusInactive: "Inactive",
+  },
+  reward: {
+    title: "Choose a reward",
+    priceSuffix: "stars per winner",
+    daySuffix: "day access",
+    basePrefix: "Base cost: ",
+  },
+  winners: "Number of winners",
+  duration: {
+    title: "Giveaway duration",
+    custom: "Custom duration",
+    optionSuffix: "hours",
+    minimumPrefix: "Minimum",
+  },
+  requirements: {
+    title: "Requirements & notifications",
+    premiumTitle: "Premium users only",
+    premiumNote: "Participants must have Telegram Premium enabled.",
+    startTitle: "Start notification",
+    startNote: "Announce the giveaway start in the target channel.",
+    endTitle: "End notification",
+    endNote: "Announce the winners in the channel when it finishes.",
+    extraTitle: "Additional channel (optional)",
+    extraPlaceholder: "@channel",
+    extraNote: "Promote a second channel alongside the giveaway.",
+    titleLabel: "Giveaway title (optional)",
+  },
+  summary: {
+    title: "Cost summary",
+    pricePerWinner: "Price per winner",
+    totalPrefix: "Total cost (",
+    totalSuffix: " winner(s))",
+    insufficient: "Balance is not sufficient. Please top up first.",
+  },
+  actions: {
+    create: "Start giveaway",
+    processing: "Creating...",
+    view: "View giveaway",
+  },
+} as const;
+
+const balanceLabel = (value: number) => `Balance: ${formatNumber(value)} stars`;
+const groupMembersLabel = (count: number) => `${formatNumber(count)} members`;
+const groupStatusLabel = (kind: string) =>
+  `Status: ${kind === "active" ? TEXT.group.statusActive : TEXT.group.statusInactive}`;
+const rewardPriceLabel = (value: number) => `${formatNumber(value)} ${TEXT.reward.priceSuffix}`;
+const rewardDaysLabel = (days: number) => `${toPersianDigits(days)} ${TEXT.reward.daySuffix}`;
+const rewardBaseLabel = (value: number) => `${TEXT.reward.basePrefix}${formatNumber(value)} stars`;
+const durationOptionLabel = (hours: number) => `${toPersianDigits(hours)} ${TEXT.duration.optionSuffix}`;
+const durationMinimumLabel = (min: number) =>
+  `${TEXT.duration.minimumPrefix} ${toPersianDigits(min)} ${TEXT.duration.optionSuffix}`;
+const summaryTotalLabel = (count: number) =>
+  `${TEXT.summary.totalPrefix}${formatNumber(count)}${TEXT.summary.totalSuffix}`;
 
 export function CreateGiveawayPage() {
   const navigate = useNavigate();
@@ -68,9 +140,10 @@ export function CreateGiveawayPage() {
         setGroups(manageable);
         setConfig(configData);
         setBalance(dashboard.balance);
-        const defaultGroup = focusGroupId && manageable.some((group) => group.id === focusGroupId)
-          ? focusGroupId
-          : manageable[0]?.id ?? null;
+        const defaultGroup =
+          focusGroupId && manageable.some((group) => group.id === focusGroupId)
+            ? focusGroupId
+            : manageable[0]?.id ?? null;
         const defaultPlan = configData.plans[0]?.id ?? null;
         const defaultDuration = configData.durationOptions[0] ?? 6;
         setSelectedGroupId(defaultGroup);
@@ -87,7 +160,7 @@ export function CreateGiveawayPage() {
     };
 
     void load();
-  }, []);
+  }, [focusGroupId]);
 
   const plan = useMemo<GiveawayPlanOption | null>(() => {
     if (!config || !selectedPlanId) {
@@ -146,7 +219,7 @@ export function CreateGiveawayPage() {
       const result = await createGiveaway(payload);
       setLastResult(result);
       setBalance((prev) => Math.max(0, prev - result.totalCost));
-      setSnackbar(`گیواوی با موفقیت ساخته شد. هزینه: ${toPersianDigits(result.totalCost)} ⭐️`);
+      setSnackbar(`Giveaway created successfully. Total cost: ${formatNumber(result.totalCost)} stars`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setSnackbar(message);
@@ -165,8 +238,8 @@ export function CreateGiveawayPage() {
   if (loading) {
     return (
       <Page>
-        <div className={styles.page} dir="rtl">
-          <Placeholder header="در حال بارگذاری" description="لطفاً کمی صبر کنید." />
+        <div className={styles.page} dir="ltr">
+          <Placeholder header={TEXT.loading.header} description={TEXT.loading.description} />
         </div>
       </Page>
     );
@@ -175,13 +248,10 @@ export function CreateGiveawayPage() {
   if (error || !config || groups.length === 0) {
     return (
       <Page>
-        <div className={styles.page} dir="rtl">
-          <Placeholder
-            header="خطا در بارگذاری داده‌ها"
-            description={error?.message ?? "اطلاعات کافی برای ساخت گیواوی موجود نیست."}
-          >
+        <div className={styles.page} dir="ltr">
+          <Placeholder header={TEXT.error.header} description={error?.message ?? TEXT.error.description}>
             <Button mode="filled" onClick={() => window.location.reload()}>
-              تلاش مجدد
+              {TEXT.error.action}
             </Button>
           </Placeholder>
         </div>
@@ -191,21 +261,23 @@ export function CreateGiveawayPage() {
 
   return (
     <Page>
-      <div className={styles.page} dir="rtl">
+      <div className={styles.page} dir="ltr">
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <Title level="3" className={styles.sectionTitle}>
-              ساخت گیواوی جدید
+              {TEXT.header.title}
             </Title>
             <div className={styles.inline}>
-              <Text weight="2">موجودی: {toPersianDigits(balance)} ⭐️</Text>
-              <Button mode="plain" size="s" onClick={() => navigate("/giveaways")}>مدیریت گیواوی‌ها</Button>
+              <Text weight="2">{balanceLabel(balance)}</Text>
+              <Button mode="plain" size="s" onClick={() => navigate("/giveaways")}>
+                {TEXT.header.manage}
+              </Button>
             </div>
           </div>
 
           <div className={styles.grid}>
             <div className={styles.inputRow}>
-              <Text weight="2">انتخاب گروه میزبان</Text>
+              <Text weight="2">{TEXT.group.title}</Text>
               <div className={styles.planGrid}>
                 {groups.map((group) => {
                   const active = group.id === selectedGroupId;
@@ -216,10 +288,8 @@ export function CreateGiveawayPage() {
                       onClick={() => setSelectedGroupId(group.id)}
                     >
                       <Text weight="2">{group.title}</Text>
-                      <Text className={styles.planDescription}>
-                        {toPersianDigits(group.membersCount)} عضو
-                      </Text>
-                      <Text className={styles.note}>وضعیت: {group.status.kind === "active" ? "فعال" : "غیرفعال"}</Text>
+                      <Text className={styles.planDescription}>{groupMembersLabel(group.membersCount)}</Text>
+                      <Text className={styles.note}>{groupStatusLabel(group.status.kind)}</Text>
                     </div>
                   );
                 })}
@@ -227,7 +297,7 @@ export function CreateGiveawayPage() {
             </div>
 
             <div className={styles.inputRow}>
-              <Text weight="2">انتخاب جایزه</Text>
+              <Text weight="2">{TEXT.reward.title}</Text>
               <div className={styles.planGrid}>
                 {config.plans.map((option) => {
                   const active = option.id === selectedPlanId;
@@ -238,10 +308,10 @@ export function CreateGiveawayPage() {
                       onClick={() => setSelectedPlanId(option.id)}
                     >
                       <Text weight="2" className={styles.planPrice}>
-                        {toPersianDigits(option.pricePerWinner)} ⭐️ برای هر برنده
+                        {rewardPriceLabel(option.pricePerWinner)}
                       </Text>
-                      <Text className={styles.planDescription}>اعتبار {toPersianDigits(option.days)} روزه</Text>
-                      <Text className={styles.note}>قیمت پایه: {toPersianDigits(option.basePrice)} ⭐️</Text>
+                      <Text className={styles.planDescription}>{rewardDaysLabel(option.days)}</Text>
+                      <Text className={styles.note}>{rewardBaseLabel(option.basePrice)}</Text>
                     </div>
                   );
                 })}
@@ -249,18 +319,12 @@ export function CreateGiveawayPage() {
             </div>
 
             <div className={styles.inputRow}>
-              <Text weight="2">تعداد برندگان</Text>
-              <Input
-                type="number"
-                value={winners}
-                min={MIN_WINNERS}
-                onChange={handleWinnersChange}
-                dir="rtl"
-              />
+              <Text weight="2">{TEXT.winners}</Text>
+              <Input type="number" value={winners} min={MIN_WINNERS} onChange={handleWinnersChange} />
             </div>
 
             <div className={styles.inputRow}>
-              <Text weight="2">مدت زمان برگزاری</Text>
+              <Text weight="2">{TEXT.duration.title}</Text>
               <div className={styles.planGrid}>
                 {config.durationOptions.map((option) => {
                   const active = !useCustomDuration && option === selectedDuration;
@@ -273,7 +337,7 @@ export function CreateGiveawayPage() {
                         setSelectedDuration(option);
                       }}
                     >
-                      <Text weight="2">{toPersianDigits(option)} ساعت</Text>
+                      <Text weight="2">{durationOptionLabel(option)}</Text>
                     </div>
                   );
                 })}
@@ -281,72 +345,70 @@ export function CreateGiveawayPage() {
                   className={classNames(styles.planCard, useCustomDuration && styles.planCardActive)}
                   onClick={() => setUseCustomDuration(true)}
                 >
-                  <Text weight="2">مدت زمان سفارشی</Text>
+                  <Text weight="2">{TEXT.duration.custom}</Text>
                   <Input
                     type="number"
                     value={customDuration}
                     min={MIN_DURATION}
                     onChange={handleCustomDurationChange}
-                    dir="rtl"
                     onClick={(event) => event.stopPropagation()}
                   />
-                  <Text className={styles.note}>حداقل {toPersianDigits(MIN_DURATION)} ساعت</Text>
+                  <Text className={styles.note}>{durationMinimumLabel(MIN_DURATION)}</Text>
                 </div>
               </div>
             </div>
 
             <div className={styles.inputRow}>
-              <Text weight="2">شرایط و تنظیمات</Text>
+              <Text weight="2">{TEXT.requirements.title}</Text>
               <div className={styles.list}>
                 <div className={styles.requirementItem}>
                   <div>
-                    <Text weight="2">فقط کاربران پریمیوم</Text>
-                    <Text className={styles.note}>شرکت‌کنندگان باید حساب پریمیوم داشته باشند.</Text>
+                    <Text weight="2">{TEXT.requirements.premiumTitle}</Text>
+                    <Text className={styles.note}>{TEXT.requirements.premiumNote}</Text>
                   </div>
                   <Switch checked={premiumOnly} onChange={(event) => setPremiumOnly(event.target.checked)} />
                 </div>
                 <div className={styles.requirementItem}>
                   <div>
-                    <Text weight="2">نوتیفیکیشن شروع</Text>
-                    <Text className={styles.note}>ارسال اعلان شروع گیواوی در کانال هدف.</Text>
+                    <Text weight="2">{TEXT.requirements.startTitle}</Text>
+                    <Text className={styles.note}>{TEXT.requirements.startNote}</Text>
                   </div>
                   <Switch checked={notifyStart} onChange={(event) => setNotifyStart(event.target.checked)} />
                 </div>
                 <div className={styles.requirementItem}>
                   <div>
-                    <Text weight="2">نوتیفیکیشن پایان</Text>
-                    <Text className={styles.note}>ارسال نتیجه گیواوی در کانال پس از پایان.</Text>
+                    <Text weight="2">{TEXT.requirements.endTitle}</Text>
+                    <Text className={styles.note}>{TEXT.requirements.endNote}</Text>
                   </div>
                   <Switch checked={notifyEnd} onChange={(event) => setNotifyEnd(event.target.checked)} />
                 </div>
                 <div className={styles.inputRow}>
-                  <Text weight="2">لینک کانال اضافی (اختیاری)</Text>
+                  <Text weight="2">{TEXT.requirements.extraTitle}</Text>
                   <Input
                     value={extraChannel}
                     onChange={(event) => setExtraChannel(event.target.value)}
-                    placeholder="@channel"
-                    dir="rtl"
+                    placeholder={TEXT.requirements.extraPlaceholder}
                   />
-                  <Text className={styles.note}>حداکثر یک لینک کانال دیگر برای حمایت.</Text>
+                  <Text className={styles.note}>{TEXT.requirements.extraNote}</Text>
                 </div>
                 <div className={styles.inputRow}>
-                  <Text weight="2">عنوان گیواوی (اختیاری)</Text>
-                  <Input value={title} onChange={(event) => setTitle(event.target.value)} dir="rtl" />
+                  <Text weight="2">{TEXT.requirements.titleLabel}</Text>
+                  <Input value={title} onChange={(event) => setTitle(event.target.value)} />
                 </div>
               </div>
             </div>
 
             <div className={styles.inputRow}>
-              <Text weight="2">خلاصه هزینه</Text>
+              <Text weight="2">{TEXT.summary.title}</Text>
               <div className={styles.summaryCard}>
-                <span className={styles.summaryLabel}>قیمت هر برنده</span>
+                <span className={styles.summaryLabel}>{TEXT.summary.pricePerWinner}</span>
                 <span className={styles.summaryValue}>
-                  {plan ? `${toPersianDigits(plan.pricePerWinner)} ⭐️` : "--"}
+                  {plan ? `${formatNumber(plan.pricePerWinner)} stars` : "--"}
                 </span>
-                <span className={styles.summaryLabel}>هزینه کل ({toPersianDigits(winners)} برنده)</span>
-                <span className={styles.summaryValue}>{toPersianDigits(totalCost)} ⭐️</span>
+                <span className={styles.summaryLabel}>{summaryTotalLabel(winners)}</span>
+                <span className={styles.summaryValue}>{formatNumber(totalCost)} stars</span>
                 {insufficientBalance && (
-                  <Text className={styles.note}>موجودی کافی نیست. لطفاً ابتدا اعتبار را افزایش دهید.</Text>
+                  <Text className={styles.note}>{TEXT.summary.insufficient}</Text>
                 )}
               </div>
             </div>
@@ -360,11 +422,11 @@ export function CreateGiveawayPage() {
               disabled={disableSubmit || insufficientBalance}
               onClick={handleSubmit}
             >
-              {processing ? "در حال ایجاد..." : "Start Giveaway"}
+              {processing ? TEXT.actions.processing : TEXT.actions.create}
             </Button>
             {lastResult && (
               <Button mode="plain" size="s" onClick={() => navigate(`/giveaways/${lastResult.id}`)}>
-                مشاهده گیواوی
+                {TEXT.actions.view}
               </Button>
             )}
           </div>
@@ -379,8 +441,3 @@ export function CreateGiveawayPage() {
     </Page>
   );
 }
-
-
-
-
-

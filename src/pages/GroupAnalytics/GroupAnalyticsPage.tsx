@@ -88,26 +88,26 @@ const DAY_MS = 86_400_000;
 const HOUR_MS = 3_600_000;
 const WEEK_START_DAY = 6;
 const CHART_HEIGHT = 260;
-const LOCALE = "fa-IR";
+const LOCALE = "en-US";
 
 const RANGE_OPTIONS: Array<{ key: RangePreset; label: string; days?: number }> = [
-  { key: "today", label: "امروز", days: 1 },
-  { key: "7d", label: `${toPersianDigits(7)} روز`, days: 7 },
-  { key: "30d", label: `${toPersianDigits(30)} روز`, days: 30 },
-  { key: "90d", label: `${toPersianDigits(90)} روز`, days: 90 },
-  { key: "custom", label: "سفارشی" },
+  { key: "today", label: "Today", days: 1 },
+  { key: "7d", label: `${toPersianDigits(7)} days`, days: 7 },
+  { key: "30d", label: `${toPersianDigits(30)} days`, days: 30 },
+  { key: "90d", label: `${toPersianDigits(90)} days`, days: 90 },
+  { key: "custom", label: "Custom" },
 ];
 
 const MESSAGE_TYPE_LABELS: Record<AnalyticsMessageType, string> = {
-  text: "متن",
-  photo: "عکس",
-  video: "ویدیو",
-  voice: "صوتی",
+  text: "Text",
+  photo: "Photo",
+  video: "Video",
+  voice: "Voice",
   gif: "GIF",
-  sticker: "استیکر",
-  file: "فایل",
-  link: "لینک",
-  forward: "فوروارد",
+  sticker: "Sticker",
+  file: "File",
+  link: "Link",
+  forward: "Forward",
 };
 
 const MESSAGE_TYPE_COLORS: Record<AnalyticsMessageType, string> = {
@@ -137,10 +137,10 @@ const MESSAGE_ORDER: AnalyticsMessageType[] = [
 const GRANULARITY_ORDER: AnalyticsGranularity[] = ["hour", "day", "week", "month"];
 
 const GRANULARITY_LABELS: Record<AnalyticsGranularity, string> = {
-  hour: "ساعتی",
-  day: "روزانه",
-  week: "هفتگی",
-  month: "ماهانه",
+  hour: "hours",
+  day: "Daily",
+  week: "Weekly",
+  month: "Monthly",
 };
 
 function createEmptyTooltip(): TooltipState {
@@ -208,13 +208,12 @@ function getAllowedGranularities(range: DateRange): AnalyticsGranularity[] {
 }
 
 function formatDecimal(value: number): string {
-  const formatted = value.toLocaleString(LOCALE, { maximumFractionDigits: 1 });
-  return toPersianDigits(formatted).replace(/\./g, "\u066B");
+  return value.toLocaleString(LOCALE, { maximumFractionDigits: 1 });
 }
 
 function formatPercent(trend: Trend): string {
   if (!trend.percent || trend.direction === "flat") {
-    return `${toPersianDigits(0)}%`;
+    return "0%";
   }
   const arrow = trend.direction === "up" ? "▲" : "▼";
   return `${arrow}${formatDecimal(trend.percent)}%`;
@@ -452,7 +451,7 @@ function MembersChart({ buckets, width, height, svgRef, gradientId }: MembersCha
         label: closest.bucket.label,
         entries: [
           {
-            label: "اعضای جدید",
+            label: "New members",
             value: formatPersianNumber(closest.bucket.value),
           },
         ],
@@ -519,8 +518,8 @@ function MembersChart({ buckets, width, height, svgRef, gradientId }: MembersCha
       )}
       {!hasData && (
         <div className={styles.emptyState}>
-          <Text weight="2">داده‌ای برای این بازه موجود نیست</Text>
-          <Text>یکی از بازه‌های کوتاه‌تر را امتحان کنید.</Text>
+          <Text weight="2">No data for this range</Text>
+          <Text>Try one of the shorter ranges.</Text>
         </div>
       )}
     </>
@@ -841,7 +840,7 @@ export function GroupAnalyticsPage() {
         if (!cancelled) {
           const normalized = err instanceof Error ? err : new Error(String(err));
           setError(normalized);
-          setSnackbar("خطا در دریافت داده‌های آمار");
+          setSnackbar("Failed to fetch analytics data");
         }
       } finally {
         if (!cancelled) {
@@ -1004,14 +1003,16 @@ export function GroupAnalyticsPage() {
     [currentMessagesTotal, previousMessagesTotal],
   );
 
-  const topMessageType = useMemo(() => {
-    let best: { type: AnalyticsMessageType; value: number } | null = null;
+  const topMessageType = useMemo<AnalyticsMessageType | null>(() => {
+    let bestType: AnalyticsMessageType | null = null;
+    let bestValue = -Infinity;
     messagesData.totalsByType.forEach((value, type) => {
-      if (!best || value > best.value) {
-        best = { type, value };
+      if (value > bestValue) {
+        bestType = type;
+        bestValue = value;
       }
     });
-    return best?.type ?? null;
+    return bestType;
   }, [messagesData]);
 
   const averageMessagesPerDay = useMemo(() => {
@@ -1163,26 +1164,26 @@ export function GroupAnalyticsPage() {
   const summaryCards = (
     <div className={styles.summaryGrid}>
       <div className={styles.summaryCard}>
-        <span className={styles.summaryLabel}>مجموع اعضای جدید</span>
+        <span className={styles.summaryLabel}>Total new members</span>
         <span className={styles.summaryValue}>{formatPersianNumber(membersTotal)}</span>
         <span className={membersTrendClass}>{formatPercent(membersTrend)}</span>
       </div>
       <div className={styles.summaryCard}>
-        <span className={styles.summaryLabel}>مجموع پیام‌های گروه</span>
+        <span className={styles.summaryLabel}>Total group messages</span>
         <span className={styles.summaryValue}>{formatPersianNumber(currentMessagesTotal)}</span>
         <span className={messagesTrendClass}>{formatPercent(messagesTrend)}</span>
       </div>
       <div className={styles.summaryCard}>
-        <span className={styles.summaryLabel}>میانگین روزانه پیام</span>
+        <span className={styles.summaryLabel}>Average daily messages</span>
         <span className={styles.summaryValue}>{formatPersianNumber(averageMessagesPerDay)}</span>
-        <span className={styles.summaryLabel}>در بازه انتخابی</span>
+        <span className={styles.summaryLabel}>Within the selected range</span>
       </div>
       <div className={styles.summaryCard}>
-        <span className={styles.summaryLabel}>پرکاربردترین نوع پیام</span>
+        <span className={styles.summaryLabel}>Most used message type</span>
         <span className={styles.summaryValue}>
           {topMessageType ? MESSAGE_TYPE_LABELS[topMessageType] : "-"}
         </span>
-        <span className={styles.summaryLabel}>بر اساس فیلتر فعال</span>
+        <span className={styles.summaryLabel}>Based on active filter</span>
       </div>
     </div>
   );
@@ -1190,7 +1191,7 @@ export function GroupAnalyticsPage() {
   const filters = (
     <div className={styles.filtersCard}>
       <div className={styles.filterRow}>
-        <Text weight="2">بازه زمانی</Text>
+        <Text weight="2">Date range</Text>
         <div className={styles.rangeButtons}>
           {RANGE_OPTIONS.map((option) => (
             <Button
@@ -1210,7 +1211,7 @@ export function GroupAnalyticsPage() {
               value={customRange.from}
               onChange={(event) => handleCustomRangeChange("from", event.target.value)}
             />
-            <span>تا</span>
+            <span>to</span>
             <input
               type="date"
               value={customRange.to}
@@ -1220,7 +1221,7 @@ export function GroupAnalyticsPage() {
         )}
       </div>
       <div className={styles.filterRow}>
-        <Text weight="2">گرانولاریتی</Text>
+        <Text weight="2">Granularity</Text>
         <div className={styles.granularityButtons}>
           {GRANULARITY_ORDER.filter((item) => allowedGranularities.includes(item)).map((item) => (
             <Button
@@ -1235,7 +1236,7 @@ export function GroupAnalyticsPage() {
         </div>
       </div>
       <div className={styles.filterRow}>
-        <Text weight="2">گروه داده پیام‌ها</Text>
+        <Text weight="2">Message data set</Text>
         <div className={styles.messageFilters}>
           {MESSAGE_ORDER.map((type) => (
             <label key={type} className={styles.messageFilter}>
@@ -1250,21 +1251,21 @@ export function GroupAnalyticsPage() {
         </div>
       </div>
       <div className={styles.filterRow}>
-        <Text weight="2">نمایش نمودار پیام‌ها</Text>
+        <Text weight="2">Show messages chart</Text>
         <div className={styles.viewButtons}>
           <Button
             mode={chartMode === "line" ? "filled" : "outline"}
             size="s"
             onClick={() => setChartMode("line")}
           >
-            خطی
+            Line
           </Button>
           <Button
             mode={chartMode === "bar" ? "filled" : "outline"}
             size="s"
             onClick={() => setChartMode("bar")}
           >
-            ستونی
+            Bar
           </Button>
         </div>
       </div>
@@ -1276,11 +1277,11 @@ export function GroupAnalyticsPage() {
       <div className={styles.chartHeader}>
         <div className={styles.chartHeaderTop}>
           <Title level="3" className={styles.chartTitle}>
-            اعضای جدید
+            New members
           </Title>
           <span className={membersTrendClass}>{formatPercent(membersTrend)}</span>
         </div>
-        <Text weight="2">تعداد اعضای جدید در بازه انتخابی بر اساس گرانولاریتی</Text>
+        <Text weight="2">Number of new members in the selected range by granularity</Text>
       </div>
       <div ref={membersContainerRef} className={styles.chartContainer}>
         {loading && !analytics ? (
@@ -1295,19 +1296,19 @@ export function GroupAnalyticsPage() {
           />
         ) : (
           <div className={styles.emptyState}>
-            <Text weight="2">داده‌ای برای این بازه موجود نیست</Text>
+            <Text weight="2">No data for this range</Text>
             <Button mode="plain" size="s" onClick={() => setRangePreset("7d")}>
-              تغییر بازه
+              Change range
             </Button>
           </div>
         )}
       </div>
       <div className={styles.downloadBar}>
         <Button mode="plain" size="s" onClick={handleDownloadMembersCsv}>
-          دانلود CSV
+          Download CSV
         </Button>
         <Button mode="plain" size="s" onClick={handleDownloadMembersImage}>
-          دانلود PNG
+          Download PNG
         </Button>
       </div>
     </div>
@@ -1318,11 +1319,11 @@ export function GroupAnalyticsPage() {
       <div className={styles.chartHeader}>
         <div className={styles.chartHeaderTop}>
           <Title level="3" className={styles.chartTitle}>
-            پیام‌های گروه
+            Group messages
           </Title>
           <span className={messagesTrendClass}>{formatPercent(messagesTrend)}</span>
         </div>
-        <Text weight="2">نمایش پیام‌ها بر اساس نوع پیام و فیلترهای فعال</Text>
+        <Text weight="2">Messages by type with active filters</Text>
         <div className={styles.chartLegend}>
           {messagesData.series.map((seriesItem) => {
             const hidden = hiddenSeries.has(seriesItem.type);
@@ -1356,19 +1357,19 @@ export function GroupAnalyticsPage() {
           />
         ) : (
           <div className={styles.emptyState}>
-            <Text weight="2">داده‌ای برای این بازه موجود نیست</Text>
+            <Text weight="2">No data for this range</Text>
             <Button mode="plain" size="s" onClick={() => setRangePreset("7d")}>
-              تغییر بازه
+              Change range
             </Button>
           </div>
         )}
       </div>
       <div className={styles.downloadBar}>
         <Button mode="plain" size="s" onClick={handleDownloadMessagesCsv}>
-          دانلود CSV
+          Download CSV
         </Button>
         <Button mode="plain" size="s" onClick={handleDownloadMessagesImage}>
-          دانلود PNG
+          Download PNG
         </Button>
       </div>
     </div>
@@ -1386,14 +1387,14 @@ export function GroupAnalyticsPage() {
     if (error && !analytics) {
       return (
         <Placeholder
-          header="مشکلی رخ داده است"
+          header="Something went wrong"
           action={
             <Button mode="filled" size="s" onClick={handleReload}>
-              تلاش مجدد
+              Try again
             </Button>
           }
         >
-          لطفاً اتصال اینترنت یا تنظیمات خود را بررسی کنید و دوباره تلاش نمایید.
+          Check your connection or settings and try again.
         </Placeholder>
       );
     }
@@ -1408,31 +1409,31 @@ export function GroupAnalyticsPage() {
   })();
 
   return (
-    <div className={styles.page} dir="rtl">
+    <div className={styles.page} dir="ltr">
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            بازگشت
+            Back
           </Button>
         </div>
         <div className={styles.headerCenter}>
           <Avatar
             size={48}
             src={group?.photoUrl ?? undefined}
-            acronym={group?.photoUrl ? undefined : group?.title?.charAt(0).toUpperCase() ?? "آ"}
+            acronym={group?.photoUrl ? undefined : group?.title?.charAt(0).toUpperCase() ?? "A"}
             alt={group?.title ?? "group"}
           />
           <div className={styles.headerTitles}>
             <Title level="3" className={styles.groupName}>
-              {group ? group.title : "گروه ناشناس"}
+              {group ? group.title : "Unknown group"}
             </Title>
             <Text weight="2" className={styles.groupSubtitle}>
-              آمار گروه
+              Group analytics
             </Text>
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="فهرست گروه" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label="Group menu" onClick={() => setMenuOpen(true)}>
             <span className={styles.burger}>
               <span />
               <span />

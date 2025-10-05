@@ -33,27 +33,27 @@ type SilenceKey = keyof SilenceSettings;
 type TimeField = "start" | "end";
 
 const TEXT = {
-  pageSubtitle: "خاموشی‌ها",
-  loading: "در حال بارگذاری تنظیمات...",
-  errorHeader: "خطا در دریافت اطلاعات",
-  back: "بازگشت",
-  unavailableHeader: "تنظیمات در دسترس نیست",
-  notice: "از این بخش می‌توانید قفل اضطراری یا بازه‌های خاموشی را تعریف کنید. در حالت فعال، پیام‌ها مطابق زمان‌بندی اجازه‌ ارسال ندارند.",
-  save: "ذخیره تنظیمات",
-  saving: "در حال ذخیره...",
-  saveSuccess: "تنظیمات با موفقیت ذخیره شد.",
-  saveErrorPrefix: "ذخیره تنظیمات با خطا مواجه شد: ",
-  emergencyTitle: "قفل موقت گروه",
-  emergencyHint: "اگر فعال شود، تمام انواع پیام‌ها (متن، تصویر، فایل و ...) از لحظه شروع تا پایان مسدود می‌شوند.",
-  silenceTitle: (index: number) => `خاموشی ${index}`,
-  silenceHint: "برای محدود کردن گفتگو در ساعات مشخص (مثلاً شب‌ها).",
-  startLabel: "زمان شروع",
-  endLabel: "زمان پایان",
-  summaryActive: (start: string, end: string) => `خاموشی فعال از ${start} تا ${end}`,
-  summaryInactive: "خاموشی غیرفعال است.",
-  summaryEmergencyActive: (start: string, end: string) => `قفل موقت فعال از ${start} تا ${end}`,
-  summaryEmergencyInactive: "قفل موقت فعال نیست.",
-  errorRange: "زمان پایان باید بعد از زمان شروع باشد.",
+  pageSubtitle: "Quiet periods",
+  loading: "Loading settings...",
+  errorHeader: "Error fetching data",
+  back: "Back",
+  unavailableHeader: "Settings are unavailable",
+  notice: "Use this section to define an emergency lock or scheduled quiet periods. When enabled, messages are blocked according to the schedule.",
+  save: "Save settings",
+  saving: "Saving...",
+  saveSuccess: "Settings saved successfully.",
+  saveErrorPrefix: "Saving settings failed: ",
+  emergencyTitle: "Temporary group lock",
+  emergencyHint: "If enabled, every message type (text, images, files, etc.) is blocked for the entire duration.",
+  silenceTitle: (index: number) => `Quiet period ${index}`,
+  silenceHint: "Use this to limit conversations during specific hours (for example overnight).",
+  startLabel: "Start time",
+  endLabel: "End time",
+  summaryActive: (start: string, end: string) => `Quiet period active from ${start} to ${end}`,
+  summaryInactive: "Quiet period is disabled.",
+  summaryEmergencyActive: (start: string, end: string) => `Emergency lock active from ${start} to ${end}`,
+  summaryEmergencyInactive: "Emergency lock is inactive.",
+  errorRange: "End time must be after the start time.",
 };
 
 function parseTimeMinutes(value: string): number | null {
@@ -286,7 +286,7 @@ export function GroupSilenceSettingsPage() {
 
   if (loading && !settings) {
     return (
-      <div className={styles.loadingState} dir="rtl">
+      <div className={styles.loadingState} dir="ltr">
         <Text weight="2">{TEXT.loading}</Text>
       </div>
     );
@@ -315,7 +315,7 @@ export function GroupSilenceSettingsPage() {
   const canSave = dirty && !saving && !hasErrors;
 
   return (
-    <div className={styles.page} dir="rtl">
+    <div className={styles.page} dir="ltr">
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <Button mode="plain" size="s" onClick={() => navigate(-1)}>
@@ -331,7 +331,7 @@ export function GroupSilenceSettingsPage() {
           />
           <div className={styles.headerTitles}>
             <Title level="3" className={styles.groupName}>
-              {group ? group.title : "گروه ناشناخته"}
+              {group ? group.title : "Unknown group"}
             </Title>
             <Text weight="2" className={styles.groupSubtitle}>
               {TEXT.pageSubtitle}
@@ -339,7 +339,7 @@ export function GroupSilenceSettingsPage() {
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="منوی گروه" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label="Group menu" onClick={() => setMenuOpen(true)}>
             <span className={styles.burger}>
               <span />
               <span />
