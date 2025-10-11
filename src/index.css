@@ -38,11 +38,28 @@ button, input, textarea, select {
   font: inherit;
 }
 
-input, textarea, select {
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select {
   user-select: text;
   -webkit-user-select: text;
   background-color: var(--app-color-surface);
   color: var(--app-color-text-primary);
+}
+
+/* Telegram UI switches lose their native proportions when wrapped by flex layouts.
+   Force the base dimensions and prevent flex parents from stretching the switch. */
+.tgui-a1dc55b304d32032 {
+  width: 52px;
+  height: 32px;
+  border-radius: 16px;
+  flex-shrink: 0;
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.tgui-a1dc55b304d32032 .tgui-3acc6d0262399734 {
+  position: absolute;
+  inset: 0;
 }
 
 textarea {

@@ -1,68 +1,80 @@
+/* Theme tokens for dark, high-contrast experience */
 :root {
-  color-scheme: light;
-  --app-font-family: "Inter", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+  --tg-theme-bg-color: var(--app-color-surface);
+  --tg-theme-secondary-bg-color: var(--app-color-background);
+  --tg-theme-text-color: var(--app-color-text-primary);
+  --tg-theme-hint-color: var(--app-color-text-muted);
+  --tg-theme-link-color: var(--app-color-accent-cyan);
+  --tg-theme-button-color: var(--app-color-accent-cyan);
+  --tg-theme-button-text-color: var(--app-color-text-primary);
+  --tg-theme-secondary-bg-color-rgb: 5, 7, 15;
+
+  --tgui--bg_color: var(--app-color-background);
+  --tgui--secondary_bg_color: var(--app-color-surface-muted);
+  --tgui--secondary_hint_color: rgba(148, 163, 184, 0.45);
+  --tgui--link_color: var(--app-color-accent-cyan);
+  --tgui--white: #ffffff;
+  --tgui--outline: rgba(15, 23, 42, 0.35);
+  --tgui--button_text_color: #000000;
+  --tgui--plain_background: transparent;
+  --tgui--plain_foreground: var(--app-color-text-primary);
+  --tgui--button_color: var(--app-color-accent-cyan);
+  --tgui--secondary_fill: rgba(148, 163, 184, 0.16);
+
+  color-scheme: dark;
+  --app-font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
   --app-font-size-base: 16px;
-  --app-line-height-base: 1.5;
+  --app-line-height-base: 1.52;
 
-  --app-color-background: #f5f7fa;
-  --app-color-surface: #ffffff;
-  --app-color-surface-muted: #f9fafb;
-  --app-color-border: rgba(15, 23, 42, 0.08);
-  --app-color-outline: rgba(15, 23, 42, 0.12);
+  --app-color-background: #05070f;
+  --app-color-background-elevated: #080c16;
+  --app-color-surface: #0d1424;
+  --app-color-surface-muted: #121a2b;
+  --app-color-surface-glow: #182135;
+  --app-color-border: rgba(62, 74, 102, 0.36);
+  --app-color-outline: rgba(50, 130, 255, 0.32);
 
-  --app-color-text-primary: #0f172a;
-  --app-color-text-secondary: rgba(15, 23, 42, 0.72);
-  --app-color-text-muted: rgba(15, 23, 42, 0.56);
+  --app-color-text-primary: #f5f7ff;
+  --app-color-text-secondary: rgba(226, 233, 255, 0.82);
+  --app-color-text-muted: rgba(164, 178, 214, 0.65);
 
-  --app-color-success: #16a34a;
-  --app-color-warning: #f59e0b;
-  --app-color-danger: #ef4444;
+  --app-color-success: #41d65e;
+  --app-color-warning: #ffb547;
+  --app-color-danger: #ff5c5c;
 
-  --app-color-accent-blue: #2563eb;
-  --app-color-accent-green: #10b981;
-  --app-color-accent-purple: #8b5cf6;
-  --app-color-accent-orange: #f97316;
+  --app-color-accent-cyan: #1ea2ff;
+  --app-color-accent-gold: #facc43;
+  --app-color-accent-green: #4ade80;
+  --app-color-accent-pink: #f472b6;
 
-  --app-radius-xs: 6px;
-  --app-radius-sm: 10px;
+  --app-radius-xs: 8px;
+  --app-radius-sm: 12px;
   --app-radius-md: 16px;
   --app-radius-lg: 20px;
   --app-radius-xl: 28px;
+  --app-radius-tab-pill: 24px;
 
-  --app-shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.08);
-  --app-shadow-md: 0 10px 32px rgba(15, 23, 42, 0.12);
-  --app-shadow-lg: 0 18px 48px rgba(15, 23, 42, 0.18);
+  --app-shadow-ambient: 0 18px 48px rgba(5, 12, 28, 0.32), 0 4px 18px rgba(0, 0, 0, 0.35);
+  --app-shadow-raised: 0 24px 60px rgba(2, 11, 24, 0.45);
+  --app-glow-cyan: 0 0 18px rgba(30, 162, 255, 0.45);
+  --app-glow-gold: 0 0 20px rgba(250, 204, 67, 0.4);
 
   --app-spacing-2xs: 4px;
   --app-spacing-xs: 8px;
   --app-spacing-sm: 12px;
   --app-spacing-md: 16px;
-  --app-spacing-lg: 20px;
-  --app-spacing-xl: 28px;
-  --app-spacing-2xl: 36px;
+  --app-spacing-lg: 24px;
+  --app-spacing-xl: 32px;
+  --app-spacing-2xl: 44px;
 
-  --app-input-height: 48px;
+  --app-input-height: 52px;
   --app-border-width: 1px;
-  --app-card-max-width: 860px;
+  --app-card-max-width: 960px;
+
+  --app-motion-duration-fast: 150ms;
+  --app-motion-duration-base: 180ms;
+  --app-motion-duration-slow: 220ms;
+  --app-motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-[data-theme="dark"] {
-  color-scheme: dark;
-  --app-color-background: #0b1220;
-  --app-color-surface: #111827;
-  --app-color-surface-muted: #162036;
-  --app-color-border: rgba(148, 163, 184, 0.22);
-  --app-color-outline: rgba(148, 163, 184, 0.35);
 
-  --app-color-text-primary: #f8fafc;
-  --app-color-text-secondary: rgba(226, 232, 240, 0.82);
-  --app-color-text-muted: rgba(203, 213, 225, 0.6);
-
-  --app-color-success: #22c55e;
-  --app-color-warning: #fbbf24;
-  --app-color-danger: #f87171;
-
-  --app-shadow-sm: 0 6px 24px rgba(0, 0, 0, 0.32);
-  --app-shadow-md: 0 12px 36px rgba(0, 0, 0, 0.38);
-  --app-shadow-lg: 0 20px 56px rgba(0, 0, 0, 0.4);
-}

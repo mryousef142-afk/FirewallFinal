@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Avatar,
@@ -55,6 +55,7 @@ const TEXT = {
   summaryEmergencyInactive: "Emergency lock is inactive.",
   errorRange: "End time must be after the start time.",
 };
+
 
 function parseTimeMinutes(value: string): number | null {
   const parts = value.split(":");
@@ -318,9 +319,13 @@ export function GroupSilenceSettingsPage() {
     <div className={styles.page} dir="ltr">
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            {TEXT.back}
-          </Button>
+          <IconButton
+            aria-label="Back"
+            onClick={() => navigate(-1)}
+            className={styles.backButton}
+          >
+            <span className={styles.backIcon} aria-hidden="true" />
+          </IconButton>
         </div>
         <div className={styles.headerCenter}>
           <Avatar
@@ -339,7 +344,7 @@ export function GroupSilenceSettingsPage() {
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="Group menu" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label="Open menu" onClick={() => setMenuOpen(true)} className={styles.menuButton}>
             <span className={styles.burger}>
               <span />
               <span />

@@ -147,41 +147,41 @@ type BanRuleDefinition = {
   icon?: string;
 };
 
+
+
 const BAN_RULE_DEFINITIONS: BanRuleDefinition[] = [
   { key: "banLinks", title: "Remove links", description: "All URLs and links are removed.", category: "links", icon: "🔗" },
   { key: "banBots", title: "Block bots", description: "Messages sent by bots are blocked.", category: "links", icon: "🤖" },
-  { key: "banBotInviters", title: "Remove bot inviters", description: "Users who add bots are removed from the group.", category: "links", icon: "⚡" },
+  { key: "banBotInviters", title: "Remove bot inviters", description: "Users who add bots are removed from the group.", category: "links", icon: "🚫🤖" },
   { key: "banDomains", title: "Block domains", description: "Messages containing a website address are removed.", category: "links", icon: "🌐" },
   { key: "banUsernames", title: "Block usernames", description: "@username mentions are not allowed.", category: "links", icon: "@" },
   { key: "banHashtags", title: "Block hashtags", description: "Messages containing # are removed.", category: "text", icon: "#" },
-  { key: "banTextPatterns", title: "Block text patterns", description: "Custom text patterns are not allowed.", category: "text", icon: "📝" },
+  { key: "banTextPatterns", title: "Block text patterns", description: "Custom text patterns are not allowed.", category: "text", icon: "✳️" },
   { key: "banForward", title: "Block forwards", description: "Forwarded messages are not allowed.", category: "interaction", icon: "🔁" },
   { key: "banForwardChannels", title: "Restrict forwards from channels", description: "Only forwards from channels are restricted.", category: "interaction", icon: "📣" },
   { key: "banPhotos", title: "Block photos", description: "Sending photos is not allowed.", category: "media", icon: "🖼️" },
-  { key: "banStickers", title: "Block stickers", description: "Using stickers is not allowed.", category: "media", icon: "🥲" },
-  { key: "banEmojis", title: "Block emojis", description: "Messages containing emojis are removed.", category: "text", icon: "😀" },
-  { key: "banEmojiOnly", title: "Block emoji-only messages", description: "Messages composed solely of emojis are removed.", category: "text", icon: "😶" },
+  { key: "banStickers", title: "Block stickers", description: "Using stickers is not allowed.", category: "media", icon: "💠" },
+  { key: "banEmojis", title: "Block emojis", description: "Messages containing emojis are removed.", category: "text", icon: "😊" },
+  { key: "banEmojiOnly", title: "Block emoji-only messages", description: "Messages composed solely of emojis are removed.", category: "text", icon: "😀" },
   { key: "banLocation", title: "Block locations", description: "Sharing locations is restricted.", category: "media", icon: "📍" },
   { key: "banPhones", title: "Block phone numbers", description: "Messages containing phone numbers are removed.", category: "text", icon: "📞" },
   { key: "banAudio", title: "Block audio", description: "Audio files (songs) are blocked.", category: "media", icon: "🎵" },
-  { key: "banVoice", title: "Block voice messages", description: "Voice messages are not allowed.", category: "media", icon: "🎙️" },
-  { key: "banFiles", title: "Block files", description: "Files and documents are removed.", category: "media", icon: "📁" },
+  { key: "banVoice", title: "Block voice messages", description: "Voice messages are not allowed.", category: "media", icon: "🎤" },
+  { key: "banFiles", title: "Block files", description: "Files and documents are removed.", category: "media", icon: "📄" },
   { key: "banApps", title: "Block app messages", description: "Messages from games or apps are blocked.", category: "interaction", icon: "🕹️" },
   { key: "banGif", title: "Block GIFs", description: "Sending GIFs is not allowed.", category: "media", icon: "🎞️" },
   { key: "banPolls", title: "Block polls", description: "Creating polls in the group is not allowed.", category: "interaction", icon: "📊" },
-  { key: "banInlineKeyboards", title: "Block inline keyboards", description: "Messages with inline buttons are removed.", category: "interaction", icon: "🪟" },
-  { key: "banGames", title: "Block games", description: "Game messages are restricted.", category: "interaction", icon: "🎲" },
+  { key: "banInlineKeyboards", title: "Block inline keyboards", description: "Messages with inline buttons are removed.", category: "interaction", icon: "🔘" },
+  { key: "banGames", title: "Block games", description: "Game messages are restricted.", category: "interaction", icon: "🎮" },
   { key: "banSlashCommands", title: "Block slash commands", description: "Slash commands (/command) cannot be used.", category: "interaction", icon: "/" },
-  { key: "banCaptionless", title: "Block captionless posts", description: "Images without captions are removed.", category: "media", icon: "📝" },
+  { key: "banCaptionless", title: "Block captionless posts", description: "Images without captions are removed.", category: "media", icon: "🖼️" },
   { key: "banLatin", title: "Block Latin letters", description: "English letters are not allowed in messages.", category: "language", icon: "A" },
-  { key: "banPersian", title: "Block Persian/Arabic letters", description: "Persian or Arabic text is restricted.", category: "language", icon: "FA" },
-  { key: "banCyrillic", title: "Block Cyrillic letters", description: "Cyrillic characters are removed.", category: "language", icon: "CY" },
-  { key: "banChinese", title: "Block Chinese characters", description: "Chinese characters are not allowed.", category: "language", icon: "ZH" },
+  { key: "banPersian", title: "Block Persian/Arabic letters", description: "Persian or Arabic text is restricted.", category: "language", icon: "فا" },
+  { key: "banCyrillic", title: "Block Cyrillic letters", description: "Cyrillic characters are removed.", category: "language", icon: "РУ" },
+  { key: "banChinese", title: "Block Chinese characters", description: "Chinese characters are not allowed.", category: "language", icon: "汉" },
   { key: "banUserReplies", title: "Block user replies", description: "Regular members cannot reply to each other.", category: "interaction", icon: "💬" },
-  { key: "banCrossReplies", title: "Block cross-chat replies", description: "Replies from other chats are blocked.", category: "interaction", icon: "🧵" },
-];
-
-const CATEGORY_GROUPS = [
+  { key: "banCrossReplies", title: "Block cross-chat replies", description: "Replies from other chats are blocked.", category: "interaction", icon: "↔️" },
+];const CATEGORY_GROUPS = [
   { id: "links", title: "Links & IDs" },
   { id: "text", title: "Text & symbols" },
   { id: "media", title: "Media & files" },
@@ -189,6 +189,7 @@ const CATEGORY_GROUPS = [
   { id: "language", title: "Languages" },
   { id: "advanced", title: "Advanced" },
 ];
+
 
 export function GroupBanSettingsPage() {
   const navigate = useNavigate();
@@ -343,7 +344,7 @@ export function GroupBanSettingsPage() {
         .map((line) => line.trim())
         .filter(Boolean);
       updateKeywordList(type, next);
-      setToastMessage("List replaced successfully ✅");
+      setToastMessage("List replaced successfully ?");
     },
     [updateKeywordList],
   );
@@ -356,10 +357,10 @@ export function GroupBanSettingsPage() {
       const text = settings[type].join("\n");
       try {
         await navigator.clipboard.writeText(text);
-        setToastMessage("List copied to clipboard ✅");
+        setToastMessage("List copied to clipboard ?");
       } catch (err) {
         console.error("clipboard error", err);
-        setToastMessage("Copy to clipboard failed ❌");
+        setToastMessage("Copy to clipboard failed ?");
       }
     },
     [settings],
@@ -373,7 +374,7 @@ export function GroupBanSettingsPage() {
       setSaving(true);
       await updateGroupBanSettings(groupId, settings);
       setDirty(false);
-      setToastMessage("Settings saved successfully ✅");
+      setToastMessage("Settings saved successfully ?");
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
@@ -419,9 +420,13 @@ export function GroupBanSettingsPage() {
     <div className={styles.page}>
       <header className={styles.header} dir="ltr">
         <div className={styles.headerLeft}>
-          <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            Back
-          </Button>
+          <IconButton
+            aria-label="Back"
+            onClick={() => navigate(-1)}
+            className={styles.backButton}
+          >
+            <span className={styles.backIcon} aria-hidden="true" />
+          </IconButton>
         </div>
         <div className={styles.headerCenter}>
           <Avatar
@@ -440,7 +445,7 @@ export function GroupBanSettingsPage() {
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="Show modules" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label="Open menu" onClick={() => setMenuOpen(true)} className={styles.menuButton}>
             <span className={styles.burger}>
               <span />
               <span />
@@ -544,6 +549,10 @@ export function GroupBanSettingsPage() {
     </div>
   );
 }
+
+
+
+
 
 
 

@@ -3,6 +3,8 @@
   BanRuleKey,
   BanRuleSetting,
   DashboardSnapshot,
+  DashboardInsights,
+  DashboardPromotions,
   GroupBanSettings,
   GroupDetail,
   GroupGeneralSettings,
@@ -32,6 +34,7 @@
   GiveawayPlanOption,
   GiveawayStatus,
   GiveawaySummary,
+  GiveawayWinnerCode,
 } from "./types.ts";
 import { BAN_RULE_KEYS } from "./types.ts";
 import { dashboardConfig } from "@/config/dashboard.ts";
@@ -48,6 +51,7 @@ const STARS_PLANS: StarsPlan[] = [
 ];
 const GIVEAWAY_PRICE_MULTIPLIER = 1.2;
 const GIVEAWAY_DURATION_OPTIONS = [6, 12, 24];
+const DEFAULT_TIMEZONE = "UTC";
 
 
 function delay(ms: number): Promise<void> {
@@ -123,6 +127,12 @@ function generateMetrics(group: ManagedGroup): GroupMetrics {
   };
 }
 
+function buildGroupInvite(id: string): string {
+  const base = id.startsWith("grp-") ? id.slice(4) : id;
+  const sanitized = base.replace(/[^a-z0-9_]/gi, "");
+  return `@${sanitized || base}`.toLowerCase();
+}
+
 function makeActiveGroup(id: string, title: string, membersCount: number, daysLeft: number): ManagedGroup {
   const now = new Date();
   return {
@@ -131,6 +141,7 @@ function makeActiveGroup(id: string, title: string, membersCount: number, daysLe
     membersCount,
     photoUrl: undefined,
     canManage: true,
+    inviteLink: buildGroupInvite(id),
     status: {
       kind: "active",
       expiresAt: addDays(now, daysLeft),
@@ -149,6 +160,7 @@ function makeExpiredGroup(id: string, title: string, membersCount: number, daysS
     membersCount,
     photoUrl: undefined,
     canManage: true,
+    inviteLink: buildGroupInvite(id),
     status: {
       kind: "expired",
       expiredAt,
@@ -167,12 +179,25 @@ function makeRemovedGroup(id: string, title: string, membersCount: number, daysS
     membersCount,
     photoUrl: undefined,
     canManage: false,
+    inviteLink: buildGroupInvite(id),
     status: {
       kind: "removed",
       removedAt,
       graceEndsAt,
     },
   };
+}
+
+function countExpiringSoon(groups: ManagedGroup[]): number {
+  return groups.filter((group) => {
+    if (group.status.kind !== "active") {
+      return false;
+    }
+    const daysLeft = typeof group.status.daysLeft === 'number'
+      ? group.status.daysLeft
+      : Math.max(0, Math.ceil((new Date(group.status.expiresAt).getTime() - Date.now()) / DAY_MS));
+    return daysLeft <= 5;
+  }).length;
 }
 
 function createMockSnapshot(): DashboardSnapshot {
@@ -194,21 +219,63 @@ function createMockSnapshot(): DashboardSnapshot {
     return new Date(group.status.graceEndsAt).getTime() >= now.getTime();
   });
 
+  const metricsList = filtered.map((group) => generateMetrics(group));
+  const insights: DashboardInsights = {
+    expiringSoon: countExpiringSoon(filtered),
+    messagesToday: metricsList.reduce((total, metrics) => total + metrics.messagesToday, 0),
+    newMembersToday: metricsList.reduce((total, metrics) => total + metrics.newMembersToday, 0),
+  };
+  const promoImage = new URL("../../assets/application.png", import.meta.url).href;
+  const promotions: DashboardPromotions = {
+    rotationSeconds: 8,
+    metadata: {
+      maxSlots: 3,
+      recommendedWidth: 960,
+      recommendedHeight: 360,
+    },
+    slots: [
+      {
+        id: "promo-sponsor-upgrade",
+        title: "Secure more groups with sponsor bundles",
+        subtitle: "Activate the sponsor plan and gift seven days of protection to every new community.",
+        imageUrl: promoImage,
+        accentColor: "#1e293b",
+        ctaLabel: "Explore plans",
+        ctaLink: "https://t.me/tgfirewallbot",
+        active: true,
+        updatedAt: now.toISOString(),
+      },
+      {
+        id: "promo-giveaway",
+        title: "Join our exclusive giveaways",
+        subtitle: "Win 500 Stars every week and scale your groups without limits.",
+        accentColor: "#312e81",
+        ctaLabel: "Enter now",
+        ctaLink: "https://t.me/tgfirewallbot",
+        active: true,
+        updatedAt: now.toISOString(),
+      },
+      {
+        id: "promo-support",
+        title: "Connect with the security team",
+        subtitle: "Request a free security audit for up to three featured groups each month.",
+        accentColor: "#0f172a",
+        ctaLabel: "Request access",
+        ctaLink: "https://t.me/tgfirewallbot",
+        active: true,
+        updatedAt: now.toISOString(),
+      },
+    ],
+  };
+
   return {
     ownerId: 1001,
     generatedAt: now.toISOString(),
     groups: filtered,
+    insights,
+    promotions,
   };
 }
-
-const TIMEZONES = [
-  "UTC",
-  "Asia/Tehran",
-  "Europe/Istanbul",
-  "Europe/London",
-  "America/New_York",
-  "Asia/Dubai",
-];
 
 function createTimeRange(mode: TimeRangeMode, start = "00:00", end = "23:59"): TimeRangeSetting {
   return { mode, start, end };
@@ -216,7 +283,7 @@ function createTimeRange(mode: TimeRangeMode, start = "00:00", end = "23:59"): T
 
 function createGeneralSettings(id: string): GroupGeneralSettings {
   const seed = hashString(id);
-  const timezone = TIMEZONES[seed % TIMEZONES.length];
+  const timezone = DEFAULT_TIMEZONE;
   const welcomeEnabled = (seed & 1) === 1;
   const warningEnabled = ((seed >> 1) & 1) === 1;
   const autoDeleteEnabled = ((seed >> 2) & 1) === 1;
@@ -377,7 +444,7 @@ function createSeededRandom(seed: number): () => number {
 
 function createAnalyticsSnapshot(id: string): GroupAnalyticsSnapshot {
   const seed = hashString(id);
-  const timezone = TIMEZONES[seed % TIMEZONES.length];
+  const timezone = DEFAULT_TIMEZONE;
   const now = new Date();
   const totalHours = 24 * 180;
   const random = createSeededRandom(seed);
@@ -504,6 +571,8 @@ export async function fetchGroupDetails(id: string): Promise<GroupDetail> {
   return {
     group,
     metrics: generateMetrics(group),
+    warnings: [],
+    botActions: [],
   };
 }
 
@@ -695,16 +764,46 @@ export async function giftStarsToGroup(
 
 export async function searchGroupsForStars(query: string): Promise<ManagedGroup[]> {
   await delay(dashboardConfig.mockDelayMs);
-  const normalized = query.trim().toLocaleLowerCase("fa-IR");
+  const normalized = normalizeSearchText(query);
+  const identifier = normalizeSearchIdentifier(query);
   const snapshot = createMockSnapshot();
-  if (!normalized) {
+
+  if (!normalized && !identifier) {
     return snapshot.groups.slice(0, 6);
   }
+
   return snapshot.groups
-    .filter((group) => group.title.toLocaleLowerCase("fa-IR").includes(normalized) || group.id.toLocaleLowerCase("fa-IR").includes(normalized))
+    .filter((group) => {
+      const titleTerm = normalizeSearchText(group.title);
+      const idTerm = normalizeSearchText(group.id);
+      const inviteTerm = normalizeSearchText(group.inviteLink ?? "");
+      const inviteIdentifier = normalizeSearchIdentifier(group.inviteLink ?? "");
+
+      const matchesTitle = normalized ? titleTerm.includes(normalized) : false;
+      const matchesId = identifier ? idTerm.includes(identifier) : false;
+      const matchesIdFallback = normalized ? idTerm.includes(normalized) : false;
+      const matchesInvite = normalized ? inviteTerm.includes(normalized) : false;
+      const matchesInviteIdentifier = identifier ? inviteIdentifier.includes(identifier) : false;
+
+      return matchesTitle || matchesId || matchesIdFallback || matchesInvite || matchesInviteIdentifier;
+    })
     .slice(0, 6);
 }
 
+function normalizeSearchText(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function normalizeSearchIdentifier(value: string | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\/(www\.)?t\.me\//, "")
+    .replace(/^@+/, "");
+}
 
 const giveawayPlans: GiveawayPlanOption[] = STARS_PLANS.map((plan) => ({
   id: `giveaway-${plan.id}`,
@@ -744,6 +843,33 @@ function cloneGiveaway(summary: GiveawaySummary): GiveawaySummary {
   return JSON.parse(JSON.stringify(summary)) as GiveawaySummary;
 }
 
+function generateWinnerCodes(summary: GiveawaySummary): GiveawayWinnerCode[] {
+  const sanitized = summary.targetGroup.title.replace(/[^A-Za-z0-9]/g, '').toUpperCase() || 'WINNER';
+  const prefix = sanitized.slice(0, 6) || 'WINNER';
+  return Array.from({ length: Math.max(1, summary.winnersCount) }).map((_, index) => {
+    const randomChunk = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const code = `${prefix}-${String(index + 1).padStart(2, '0')}-${randomChunk}`;
+    const message = `You won the giveaway for ${summary.targetGroup.title}! Send the code ${code} alone in your group chat to apply the ${summary.prize.days}-day credit.`;
+    return { code, message };
+  });
+}
+
+function attachWinnerCodes(summary: GiveawaySummary): GiveawaySummary {
+  if (summary.winnerCodes && summary.winnerCodes.length > 0) {
+    return summary;
+  }
+  const winnerCodes = generateWinnerCodes(summary);
+  winnerCodes.forEach((entry, index) => {
+    console.info('[giveaway] winner_notified', {
+      giveawayId: summary.id,
+      position: index + 1,
+      code: entry.code,
+      message: entry.message,
+    });
+  });
+  return { ...summary, winnerCodes };
+}
+
 function ensureGiveawayRecords(): GiveawaySummary[] {
   if (!giveawayRecords) {
     giveawayRecords = createInitialGiveaways();
@@ -762,7 +888,7 @@ function createInitialGiveaways(): GiveawaySummary[] {
     const endsAt = new Date(now + (index === 0 ? 6 : (index + 1) * 5) * 3_600_000).toISOString();
     const status = deriveGiveawayStatus(startsAt, endsAt);
     const participants = winners * (status === "completed" ? 10 : 6 + index * 2);
-    return {
+    const summary: GiveawaySummary = {
       id: `mock-giveaway-${group.id}`,
       title: `Special giveaway for ${group.title}`,
       status,
@@ -781,9 +907,12 @@ function createInitialGiveaways(): GiveawaySummary[] {
       requirements: {
         premiumOnly: index % 2 === 0,
         targetChannel: `@${group.id}`,
-        extraChannel: index % 3 === 0 ? "@tgfirewall" : null,
+        extraChannel: index % 3 === 0 ? '@tgfirewall' : null,
       },
+      winnerCodes: [],
     };
+
+    return summary.status === 'completed' ? attachWinnerCodes(summary) : summary;
   });
 }
 
@@ -809,9 +938,16 @@ function refreshGiveawayStatuses(): void {
   giveawayRecords = records.map((item) => {
     const status = deriveGiveawayStatus(item.startsAt, item.endsAt);
     if (status === item.status) {
+      if (status === 'completed') {
+        return attachWinnerCodes(item);
+      }
       return item;
     }
-    return { ...item, status };
+    let updated: GiveawaySummary = { ...item, status };
+    if (status === 'completed') {
+      updated = attachWinnerCodes(updated);
+    }
+    return updated;
   });
 }
 
@@ -857,7 +993,7 @@ export async function createGiveaway(payload: GiveawayCreationPayload): Promise<
   const durationMs = Math.max(1, payload.durationHours) * 3_600_000;
   const endsAt = new Date(Date.now() + durationMs).toISOString();
   const totalCost = computeGiveawayTotal(plan, winners);
-  const summary: GiveawaySummary = {
+  let summary: GiveawaySummary = {
     id: `giveaway-${Date.now()}`,
     title: payload.title ?? `${group.title} giveaway`,
     status: deriveGiveawayStatus(startsAt, endsAt),
@@ -878,7 +1014,12 @@ export async function createGiveaway(payload: GiveawayCreationPayload): Promise<
       targetChannel: `@${group.id}`,
       extraChannel: payload.extraChannel ?? null,
     },
+    winnerCodes: [],
   };
+
+  if (summary.status === 'completed') {
+    summary = attachWinnerCodes(summary);
+  }
 
   giveawayBalance = Math.max(0, giveawayBalance - totalCost);
   giveawayRecords = [summary, ...ensureGiveawayRecords()];

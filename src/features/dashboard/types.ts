@@ -28,10 +28,42 @@ export interface ManagedGroup {
   inviteLink?: string | null;
 }
 
+export interface DashboardInsights {
+  expiringSoon: number;
+  messagesToday: number;
+  newMembersToday: number;
+}
+
+export interface DashboardPromoSlot {
+  id: string;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+  accentColor?: string;
+  ctaLabel?: string;
+  ctaLink?: string;
+  active: boolean;
+  updatedAt: string;
+}
+
+export interface DashboardPromoMetadata {
+  maxSlots: number;
+  recommendedWidth: number;
+  recommendedHeight: number;
+}
+
+export interface DashboardPromotions {
+  slots: DashboardPromoSlot[];
+  rotationSeconds: number;
+  metadata: DashboardPromoMetadata;
+}
+
 export interface DashboardSnapshot {
   ownerId: number;
   groups: ManagedGroup[];
   generatedAt: string;
+  insights: DashboardInsights;
+  promotions: DashboardPromotions;
 }
 
 export type Trend = {
@@ -50,9 +82,29 @@ export interface GroupMetrics {
   newMembersTrend: Trend;
 }
 
+export interface GroupWarning {
+  id: string;
+  member: string;
+  rule: string;
+  message: string;
+  timestamp: string;
+  severity: 'info' | 'warning' | 'critical';
+}
+
+export interface GroupBotAction {
+  id: string;
+  action: string;
+  target?: string | null;
+  timestamp: string;
+  performedBy: string;
+  status: 'success' | 'failed';
+}
+
 export interface GroupDetail {
   group: ManagedGroup;
   metrics: GroupMetrics;
+  warnings: GroupWarning[];
+  botActions: GroupBotAction[];
 }
 
 export type TimeRangeMode = "all" | "custom";
@@ -282,6 +334,11 @@ export interface GiveawayRequirement {
   extraChannel?: string | null;
 }
 
+export interface GiveawayWinnerCode {
+  code: string;
+  message: string;
+}
+
 export interface GiveawaySummary {
   id: string;
   title: string;
@@ -293,7 +350,9 @@ export interface GiveawaySummary {
   endsAt: string;
   targetGroup: ManagedGroup;
   requirements: GiveawayRequirement;
+  winnerCodes?: GiveawayWinnerCode[];
 }
+
 
 export interface GiveawayDashboardData {
   balance: number;
@@ -313,6 +372,10 @@ export interface GiveawayCreationPayload {
   winners: number;
   durationHours: number;
   premiumOnly: boolean;
+  chatBoosterOnly?: boolean;
+  inviteUniqueFriend?: boolean;
+  includedChannels?: string[];
+  externalLinks?: string[];
   notifyStart: boolean;
   notifyEnd: boolean;
   extraChannel?: string | null;
@@ -332,4 +395,7 @@ export interface GiveawayDetail extends GiveawaySummary {
   totalCost: number;
   premiumOnly: boolean;
 }
+
+
+
 

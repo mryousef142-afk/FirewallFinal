@@ -1,17 +1,17 @@
-import { openLink } from "@telegram-apps/sdk-react";
-import { Button, Placeholder, Text } from "@telegram-apps/telegram-ui";
-import Lottie from "lottie-react";
+import { openLink } from '@telegram-apps/sdk-react';
+import { Button, Placeholder, Text } from '@telegram-apps/telegram-ui';
+import Lottie from 'lottie-react';
 
-import { useTgsAnimation } from "@/hooks/useTgsAnimation.ts";
+import { useTgsAnimation } from '@/hooks/useTgsAnimation.ts';
 
-import styles from "./EmptyState.module.css";
+import styles from './EmptyState.module.css';
 
 type EmptyStateProps = {
   inviteUrl?: string;
   onInvite?: () => void;
 };
 
-const NO_GROUPS_TGS = new URL("../../../assets/lottie/no-groups.tgs", import.meta.url).href;
+const NO_GROUPS_TGS = new URL('../../../assets/lottie/no-groups.tgs', import.meta.url).href;
 
 export function EmptyState({ inviteUrl, onInvite }: EmptyStateProps) {
   const { data, isLoading } = useTgsAnimation<Record<string, unknown>>(NO_GROUPS_TGS);
@@ -25,13 +25,13 @@ export function EmptyState({ inviteUrl, onInvite }: EmptyStateProps) {
   };
 
   return (
-    <div className={styles.wrapper} dir="ltr">
+    <div className={styles.wrapper} dir='ltr'>
       <Placeholder
         className={styles.placeholder}
-        header="No groups yet"
+        header='No managed groups yet'
         description={
-          <Text weight="2" className={styles.description}>
-            You are not managing any groups with this bot yet.
+          <Text weight='2' className={styles.description}>
+            Add the Firewall bot to a Telegram group to see health stats and quick actions here.
           </Text>
         }
       >
@@ -41,15 +41,17 @@ export function EmptyState({ inviteUrl, onInvite }: EmptyStateProps) {
         </div>
         <Button
           className={styles.cta}
-          mode="filled"
-          size="l"
+          mode='filled'
+          size='l'
           stretched
           onClick={handleInvite}
           disabled={!inviteUrl && !onInvite}
         >
-          Add the bot to a group
+          ? Add bot to a group
         </Button>
       </Placeholder>
     </div>
   );
 }
+
+

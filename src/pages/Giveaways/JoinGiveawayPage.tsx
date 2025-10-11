@@ -1,81 +1,34 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Button, Placeholder, Snackbar, Switch, Text, Title } from "@telegram-apps/telegram-ui";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Button, Placeholder, Snackbar, Switch, Text } from '@telegram-apps/telegram-ui';
 
-import { Page } from "@/components/Page.tsx";
-import { classNames } from "@/css/classnames.ts";
-import { fetchGiveawayDetail, joinGiveaway } from "@/features/dashboard/api.ts";
-import type { GiveawayDetail } from "@/features/dashboard/types.ts";
-import { useOwnerProfile } from "@/features/dashboard/useOwnerProfile.ts";
-import { formatNumber, toPersianDigits } from "@/utils/format.ts";
+import { fetchGiveawayDetail, joinGiveaway } from '@/features/dashboard/api.ts';
+import type { GiveawayDetail } from '@/features/dashboard/types.ts';
+import { useOwnerProfile } from '@/features/dashboard/useOwnerProfile.ts';
 
-import styles from "./GiveawayPages.module.css";
+import styles from './GiveawayPages.module.css';
 
 type RouteParams = {
   giveawayId: string;
 };
 
 const TEXT = {
-  loading: {
-    header: "Loading",
-    description: "Please wait a moment.",
-  },
-  error: {
-    header: "Giveaway not found",
-    description: "No information available.",
-    action: "Back",
-  },
-  header: {
-    title: "Gifts giveaway",
-  },
-  reward: (detail: GiveawayDetail) =>
-    `Reward: ${toPersianDigits(detail.prize.days)} day access for ${formatNumber(detail.winnersCount)} winner(s) — ${formatNumber(detail.prize.pricePerWinner)} stars each`,
-  stats: {
-    participants: (count: number) => `Participants: ${formatNumber(count)}`,
-    winners: (count: number) => `Winners: ${formatNumber(count)}`,
-    ends: (value: string) =>
-      `Ends: ${new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))}`,
-  },
-  requirements: {
-    title: "Participation requirements",
-    host: "Subscribe to the host channel",
-    partner: "Visit the partner channel",
-    open: "Open",
-    premium: {
-      title: "Telegram Premium",
-      ok: "Premium status confirmed.",
-      missing: "Telegram Premium is required to participate.",
-    },
-  },
-  actions: {
-    title: "Join the giveaway",
-    already: "You have already joined this giveaway.",
-    premiumBlocked: "This giveaway is only available to Telegram Premium users.",
-    join: "Join the giveaway",
-    joined: "Already joined",
-    submitting: "Submitting...",
-    success: "Your participation has been recorded.",
-  },
+  loading: 'Loading giveaway...',
+  loadError: 'Giveaway not found.',
+  retry: 'Back',
+  joined: 'You�re in! Results will be announced soon.',
+  join: 'Join Giveaway',
+  joinedButton: 'Already joined',
+  requirePremium: 'Only available to Telegram Premium users.',
 };
 
-function formatTime(seconds: number): string {
+function formatCountdown(seconds: number): string {
   const safe = Math.max(0, seconds);
   const hours = Math.floor(safe / 3600);
   const minutes = Math.floor((safe % 3600) / 60);
   const secs = safe % 60;
-  const pad = (value: number) => value.toString().padStart(2, "0");
-  return `${toPersianDigits(pad(hours))}:${toPersianDigits(pad(minutes))}:${toPersianDigits(pad(secs))}`;
-}
-
-function buildChannelLink(value: string): string {
-  if (!value) {
-    return "";
-  }
-  if (value.startsWith("http")) {
-    return value;
-  }
-  const normalized = value.startsWith("@") ? value.slice(1) : value;
-  return `https://t.me/${normalized}`;
+  const pad = (value: number) => value.toString().padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
 }
 
 export function JoinGiveawayPage() {
@@ -90,7 +43,7 @@ export function JoinGiveawayPage() {
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [joining, setJoining] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
-  const [extraVisited, setExtraVisited] = useState(false);
+  const [extraChecked, setExtraChecked] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
   const load = useCallback(async () => {
@@ -103,12 +56,10 @@ export function JoinGiveawayPage() {
       setDetail(data);
       setCountdown(data.remainingSeconds);
       setSubscribed(false);
-      setExtraVisited(false);
+      setExtraChecked(false);
       setError(null);
     } catch (err) {
-      const normalized = err instanceof Error ? err : new Error(String(err));
-      setError(normalized);
-      setSnackbar(normalized.message);
+      setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);
     }
@@ -135,16 +86,8 @@ export function JoinGiveawayPage() {
     return () => window.clearInterval(timer);
   }, [detail]);
 
-  const handleCloseSnackbar = useCallback(() => setSnackbar(null), []);
-
-  const extraChannelLink = useMemo(() => buildChannelLink(detail?.requirements.extraChannel ?? ""), [detail]);
-  const mainChannelLink = useMemo(() => buildChannelLink(detail?.requirements.targetChannel ?? ""), [detail]);
-
-  const canJoin = useMemo(() => {
+  const requirementsMet = useMemo(() => {
     if (!detail) {
-      return false;
-    }
-    if (detail.status !== "active" || detail.joined) {
       return false;
     }
     if (detail.requirements.premiumOnly && !hasPremium) {
@@ -153,142 +96,129 @@ export function JoinGiveawayPage() {
     if (!subscribed) {
       return false;
     }
-    if (detail.requirements.extraChannel && !extraVisited) {
+    if (detail.requirements.extraChannel && !extraChecked) {
       return false;
     }
     return true;
-  }, [detail, hasPremium, subscribed, extraVisited]);
+  }, [detail, hasPremium, subscribed, extraChecked]);
 
   const handleJoin = useCallback(async () => {
-    if (!giveawayId || !canJoin) {
+    if (!giveawayId || !requirementsMet || detail?.joined) {
       return;
     }
     try {
       setJoining(true);
       const updated = await joinGiveaway(giveawayId);
       setDetail(updated);
-      setSnackbar(TEXT.actions.success);
+      setSnackbar('Participation recorded. Good luck!');
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setSnackbar(message);
     } finally {
       setJoining(false);
     }
-  }, [giveawayId, canJoin]);
+  }, [detail, giveawayId, requirementsMet]);
 
   if (loading) {
     return (
-      <Page>
-        <div className={styles.page} dir="ltr">
-          <Placeholder header={TEXT.loading.header} description={TEXT.loading.description} />
-        </div>
-      </Page>
+      <div className={styles.page} dir='ltr'>
+        <Placeholder header={TEXT.loading} />
+      </div>
     );
   }
 
   if (error || !detail) {
     return (
-      <Page>
-        <div className={styles.page} dir="ltr">
-          <Placeholder header={TEXT.error.header} description={error?.message ?? TEXT.error.description}>
-            <Button mode="filled" onClick={() => navigate("/giveaways")}>
-              {TEXT.error.action}
-            </Button>
-          </Placeholder>
-        </div>
-      </Page>
+      <div className={styles.page} dir='ltr'>
+        <Placeholder header={TEXT.loadError} description={error?.message}>
+          <Button mode='filled' onClick={() => navigate('/giveaway/active')}>{TEXT.retry}</Button>
+        </Placeholder>
+      </div>
     );
   }
 
-  const alreadyJoined = detail.joined;
-  const premiumBlocked = detail.requirements.premiumOnly && !hasPremium;
+  const rewardChips = [
+    `${detail.prize.days} day access`,
+    `${detail.winnersCount} winners`,
+    `${detail.prize.pricePerWinner.toLocaleString()} ? each`,
+  ];
 
   return (
-    <Page>
-      <div className={styles.page} dir="ltr">
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <Title level="3" className={styles.sectionTitle}>
-              {TEXT.header.title}
-            </Title>
-            <span className={classNames(styles.countdown)}>{formatTime(countdown)}</span>
-          </div>
-          <Text weight="2">{detail.title}</Text>
-          <Text className={styles.note}>{TEXT.reward(detail)}</Text>
-          <div className={styles.tagRow}>
-            <Text>{TEXT.stats.participants(detail.participants)}</Text>
-            <Text>{TEXT.stats.winners(detail.winnersCount)}</Text>
-            <Text>{TEXT.stats.ends(detail.endsAt)}</Text>
-          </div>
-        </section>
+    <div className={styles.page} dir='ltr'>
+      <section className={styles.joinHeader}>
+        <Text weight='2'>Ends in {formatCountdown(countdown)}</Text>
+        <h1 className={styles.cardTitle}>{detail.title}</h1>
+        <Text className={styles.sectionHint}>Earn points & climb the leaderboard</Text>
+        <div className={styles.rewardStrip}>
+          {rewardChips.map((chip) => (
+            <span key={chip} className={styles.rewardPill}>{chip}</span>
+          ))}
+        </div>
+      </section>
 
-        <section className={styles.section}>
-          <Title level="3" className={styles.sectionTitle}>
-            {TEXT.requirements.title}
-          </Title>
-          <div className={styles.requirementsList}>
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Requirements</h2>
+          <span className={styles.sectionHint}>Complete all steps to unlock Join</span>
+        </div>
+        <div className={styles.requirements}>
+          <div className={styles.requirementItem}>
+            <div>
+              <Text weight='2'>Subscribe to host channel</Text>
+              <Text className={styles.requirementStatus}>{detail.requirements.targetChannel}</Text>
+            </div>
+            <Switch checked={subscribed} onChange={(event) => setSubscribed(event.target.checked)} />
+          </div>
+          {detail.requirements.extraChannel && (
             <div className={styles.requirementItem}>
               <div>
-                <Text weight="2">{TEXT.requirements.host}</Text>
-                <Text className={styles.note}>{detail.requirements.targetChannel}</Text>
+                <Text weight='2'>Follow partner channel</Text>
+                <Text className={styles.requirementStatus}>{detail.requirements.extraChannel}</Text>
               </div>
-              <div className={styles.inline}>
-                <Button mode="plain" size="s" onClick={() => window.open(mainChannelLink, "_blank")}>
-                  {TEXT.requirements.open}
-                </Button>
-                <Switch checked={subscribed} onChange={(event) => setSubscribed(event.target.checked)} />
-              </div>
+              <Switch checked={extraChecked} onChange={(event) => setExtraChecked(event.target.checked)} />
             </div>
-            {detail.requirements.extraChannel && (
-              <div className={styles.requirementItem}>
-                <div>
-                  <Text weight="2">{TEXT.requirements.partner}</Text>
-                  <Text className={styles.note}>{detail.requirements.extraChannel}</Text>
-                </div>
-                <div className={styles.inline}>
-                  <Button mode="plain" size="s" onClick={() => window.open(extraChannelLink, "_blank")}>
-                    {TEXT.requirements.open}
-                  </Button>
-                  <Switch checked={extraVisited} onChange={(event) => setExtraVisited(event.target.checked)} />
-                </div>
+          )}
+          {detail.requirements.premiumOnly && (
+            <div className={styles.requirementItem}>
+              <div>
+                <Text weight='2'>Telegram Premium</Text>
+                <Text className={styles.requirementStatus}>{hasPremium ? 'Premium verified' : TEXT.requirePremium}</Text>
               </div>
-            )}
-            {detail.requirements.premiumOnly && (
-              <div className={styles.requirementItem}>
-                <div>
-                  <Text weight="2">{TEXT.requirements.premium.title}</Text>
-                  <Text className={styles.note}>
-                    {hasPremium ? TEXT.requirements.premium.ok : TEXT.requirements.premium.missing}
-                  </Text>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+              <Switch checked={hasPremium} disabled />
+            </div>
+          )}
+        </div>
+      </section>
 
-        <section className={styles.section}>
-          <Title level="3" className={styles.sectionTitle}>
-            {TEXT.actions.title}
-          </Title>
-          {alreadyJoined && <Text className={styles.note}>{TEXT.actions.already}</Text>}
-          {premiumBlocked && <Text className={styles.note}>{TEXT.actions.premiumBlocked}</Text>}
-          <Button
-            mode="filled"
-            size="m"
-            stretched
-            disabled={!canJoin || joining}
-            onClick={handleJoin}
-          >
-            {joining ? TEXT.actions.submitting : alreadyJoined ? TEXT.actions.joined : TEXT.actions.join}
-          </Button>
-        </section>
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Giveaway summary</h2>
+          <span className={styles.sectionHint}>{detail.participants.toLocaleString()} participants</span>
+        </div>
+        <div className={styles.tagRow}>
+          <span>Group: {detail.targetGroup.title}</span>
+          <span>Ends: {new Date(detail.endsAt).toLocaleString()}</span>
+        </div>
+      </section>
 
-        {snackbar && (
-          <Snackbar duration={3500} onClose={handleCloseSnackbar}>
-            {snackbar}
-          </Snackbar>
-        )}
-      </div>
-    </Page>
+      <section className={`${styles.section} ${styles.joinCTA}`}>
+        {detail.joined && <div className={styles.successState}>{TEXT.joined}</div>}
+        <Button
+          mode='filled'
+          size='l'
+          stretched
+          disabled={!requirementsMet || detail.joined}
+          loading={joining}
+          onClick={handleJoin}
+        >
+          {detail.joined ? TEXT.joinedButton : TEXT.join}
+        </Button>
+      </section>
+
+      {snackbar && (
+        <Snackbar onClose={() => setSnackbar(null)}>{snackbar}</Snackbar>
+      )}
+    </div>
   );
 }
+

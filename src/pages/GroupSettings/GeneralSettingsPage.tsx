@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Avatar,
@@ -39,13 +39,48 @@ type ScheduleSectionProps = {
 };
 
 const TIMEZONE_OPTIONS = [
-  { value: "UTC", label: "UTC (Global)" },
-  { value: "Asia/Tehran", label: "Asia/Tehran (Tehran)" },
-  { value: "Europe/Istanbul", label: "Europe/Istanbul (Istanbul)" },
-  { value: "Europe/London", label: "Europe/London (London)" },
-  { value: "America/New_York", label: "America/New_York (New York)" },
-  { value: "Asia/Dubai", label: "Asia/Dubai (Dubai)" },
+  { value: "UTC", label: "UTC (GMT+00:00 - Global)" },
+  { value: "Europe/London", label: "Europe/London (GMT+00:00 - London)" },
+  { value: "Europe/Lisbon", label: "Europe/Lisbon (GMT+00:00 - Lisbon)" },
+  { value: "Europe/Berlin", label: "Europe/Berlin (GMT+01:00 - Central Europe)" },
+  { value: "Europe/Paris", label: "Europe/Paris (GMT+01:00 - Paris)" },
+  { value: "Africa/Cairo", label: "Africa/Cairo (GMT+02:00 - Cairo)" },
+  { value: "Europe/Kaliningrad", label: "Europe/Kaliningrad (GMT+02:00 - Kaliningrad)" },
+  { value: "Europe/Istanbul", label: "Europe/Istanbul (GMT+03:00 - Istanbul)" },
+  { value: "Europe/Moscow", label: "Europe/Moscow (GMT+03:00 - Moscow)" },
+  { value: "Asia/Riyadh", label: "Asia/Riyadh (GMT+03:00 - Riyadh)" },
+  { value: "Asia/Tehran", label: "Asia/Tehran (GMT+03:30 - Tehran)" },
+  { value: "Asia/Dubai", label: "Asia/Dubai (GMT+04:00 - Dubai)" },
+  { value: "Asia/Tbilisi", label: "Asia/Tbilisi (GMT+04:00 - Tbilisi)" },
+  { value: "Asia/Yekaterinburg", label: "Asia/Yekaterinburg (GMT+05:00 - Yekaterinburg)" },
+  { value: "Asia/Karachi", label: "Asia/Karachi (GMT+05:00 - Karachi)" },
+  { value: "Asia/Colombo", label: "Asia/Colombo (GMT+05:30 - Colombo)" },
+  { value: "Asia/Kolkata", label: "Asia/Kolkata (GMT+05:30 - New Delhi)" },
+  { value: "Asia/Dhaka", label: "Asia/Dhaka (GMT+06:00 - Dhaka)" },
+  { value: "Asia/Urumqi", label: "Asia/Urumqi (GMT+06:00 - Urumqi)" },
+  { value: "Asia/Novosibirsk", label: "Asia/Novosibirsk (GMT+07:00 - Novosibirsk)" },
+  { value: "Asia/Bangkok", label: "Asia/Bangkok (GMT+07:00 - Bangkok)" },
+  { value: "Asia/Jakarta", label: "Asia/Jakarta (GMT+07:00 - Jakarta)" },
+  { value: "Asia/Shanghai", label: "Asia/Shanghai (GMT+08:00 - Beijing)" },
+  { value: "Asia/Singapore", label: "Asia/Singapore (GMT+08:00 - Singapore)" },
+  { value: "Asia/Hong_Kong", label: "Asia/Hong_Kong (GMT+08:00 - Hong Kong)" },
+  { value: "Asia/Tokyo", label: "Asia/Tokyo (GMT+09:00 - Tokyo)" },
+  { value: "Asia/Seoul", label: "Asia/Seoul (GMT+09:00 - Seoul)" },
+  { value: "Asia/Vladivostok", label: "Asia/Vladivostok (GMT+10:00 - Vladivostok)" },
+  { value: "Australia/Sydney", label: "Australia/Sydney (GMT+10:00 - Sydney)" },
+  { value: "Pacific/Auckland", label: "Pacific/Auckland (GMT+12:00 - Auckland)" },
+  { value: "America/Sao_Paulo", label: "America/Sao_Paulo (GMT-03:00 - Sao Paulo)" },
+  { value: "America/Buenos_Aires", label: "America/Buenos_Aires (GMT-03:00 - Buenos Aires)" },
+  { value: "America/New_York", label: "America/New_York (GMT-05:00 - New York)" },
+  { value: "America/Toronto", label: "America/Toronto (GMT-05:00 - Toronto)" },
+  { value: "America/Chicago", label: "America/Chicago (GMT-06:00 - Chicago)" },
+  { value: "America/Mexico_City", label: "America/Mexico_City (GMT-06:00 - Mexico City)" },
+  { value: "America/Denver", label: "America/Denver (GMT-07:00 - Denver)" },
+  { value: "America/Phoenix", label: "America/Phoenix (GMT-07:00 - Phoenix)" },
+  { value: "America/Los_Angeles", label: "America/Los_Angeles (GMT-08:00 - Los Angeles)" },
+  { value: "America/Vancouver", label: "America/Vancouver (GMT-08:00 - Vancouver)" },
 ];
+
 
 function ScheduleSection({ title, value, disabled, onModeChange, onStartChange, onEndChange }: ScheduleSectionProps) {
   return (
@@ -209,7 +244,7 @@ export function GroupGeneralSettingsPage() {
           navigate(`/groups/${groupId}/settings/texts`, { state: { group } });
           break;
         case "giveaway":
-          navigate("/giveaways/create", { state: { focusGroupId: groupId } });
+          navigate("/giveaway/create", { state: { focusGroupId: groupId } });
           break;
         case "stars":
           navigate("/stars", { state: { focusGroupId: groupId } });
@@ -232,7 +267,7 @@ export function GroupGeneralSettingsPage() {
       setSaving(true);
       await updateGroupGeneralSettings(groupId, settings);
       setDirty(false);
-      setToastMessage("Settings saved successfully ✅");
+      setToastMessage("Settings saved successfully âœ…");
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
@@ -278,9 +313,13 @@ export function GroupGeneralSettingsPage() {
     <div className={styles.page}>
       <header className={styles.header} dir="ltr">
         <div className={styles.headerLeft}>
-          <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            Back
-          </Button>
+          <IconButton
+            aria-label="Back"
+            onClick={() => navigate(-1)}
+            className={styles.backButton}
+          >
+            <span className={styles.backIcon} aria-hidden="true" />
+          </IconButton>
         </div>
         <div className={styles.headerCenter}>
           <Avatar
@@ -299,7 +338,7 @@ export function GroupGeneralSettingsPage() {
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="Show modules" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label="Open menu" onClick={() => setMenuOpen(true)} className={styles.menuButton}>
             <span className={styles.burger}>
               <span />
               <span />

@@ -1,4 +1,4 @@
-﻿# Firewall Bot & Mini App Demo
+# Firewall Bot & Mini App Demo
 
 This project demonstrates the firewall bot (FW-01) and accompanying Telegram Mini App dashboards (FW-02+).
 
@@ -7,6 +7,13 @@ This project demonstrates the firewall bot (FW-01) and accompanying Telegram Min
 - The bot exposes an inline keyboard with buttons for adding the bot to a group, opening the management panel, visiting the channel, checking commands, and reading information.
 - The mini app button relies on `MINI_APP_URL` and the add-to-group button uses `BOT_USERNAME`/`ADD_TO_GROUP_URL`.
 - Texts live in `bot/content.json`, making it easy to localise or customise without touching the source code.
+
+### Owner Panel
+
+- Setting `BOT_OWNER_ID` unlocks the private `/panel` command with inline navigation and dedicated back buttons.
+- Owners can manage panel admins, groups, manual credit adjustments, global texts, and broadcast placeholders from the same flow.
+- Promo slider controls allow listing existing slides, uploading new 960x360px banners (photo + target link), and removing outdated entries.
+- The panel also includes a ban list manager to block or unblock user ids from accessing privileged dashboards.
 
 ## Mini App Dashboard (FW-02)
 
@@ -30,6 +37,9 @@ This project demonstrates the firewall bot (FW-01) and accompanying Telegram Min
 
 ## Additional Features
 
+- XP marketplace lets operators redeem mission XP for uptime credits, Stars, and cosmetic rewards.
+- Referral boosters provide invite links so every successful signup grants XP toward free group credit.
+
 - Stars top-up module offers plan selection, multi-winner giveaways, and support for gifting other groups.
 - Analytics charts expose member growth and multi-series message activity with CSV/PNG exports and adjustable granularity.
 - Management menu items cover general settings, quiet hours, required membership, custom texts, analytics, stars, and giveaways.
@@ -40,3 +50,4 @@ This project demonstrates the firewall bot (FW-01) and accompanying Telegram Min
 - Tests are not included; mocks power the current flows.
 - `npm run build` compiles the mini app (linting currently expects type fixes in `GroupAnalyticsPage.tsx`).
 - Adjust mock delays and invite URLs through `.env` to tune the demo.
+

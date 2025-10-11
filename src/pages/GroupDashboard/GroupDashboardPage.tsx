@@ -1,75 +1,114 @@
-﻿import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Avatar, Button, IconButton, Placeholder, Text, Title } from "@telegram-apps/telegram-ui";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Avatar, Button, IconButton, Placeholder, Snackbar, Switch } from '@telegram-apps/telegram-ui';
 
-import { GroupMenuDrawer } from "@/features/dashboard/GroupMenuDrawer.tsx";
-import { StatCard } from "@/features/dashboard/StatCard.tsx";
-import { fetchGroupDetails } from "@/features/dashboard/api.ts";
-import type { GroupDetail, ManagedGroup } from "@/features/dashboard/types.ts";
-import { GroupCardSkeleton } from "@/features/dashboard/GroupCardSkeleton.tsx";
-import {
-  formatDurationFromMs,
-  formatNumber,
-  formatSignedPercent,
-} from "@/utils/format.ts";
+import { GroupMenuDrawer } from '@/features/dashboard/GroupMenuDrawer.tsx';
+import { fetchGroupDetails } from '@/features/dashboard/api.ts';
+import type { GroupBotAction, GroupDetail, GroupWarning, ManagedGroup } from '@/features/dashboard/types.ts';
+import { formatNumber, formatSignedPercent } from '@/utils/format.ts';
 
-import styles from "./GroupDashboardPage.module.css";
+import styles from './GroupDashboardPage.module.css';
+
+const DAY_MS = 86_400_000;
+
+const TEXT = {
+  loadingHeader: 'Loading group',
+  loadingDescription: 'Fetching the latest stats...',
+  errorHeader: 'Failed to load group',
+  errorDescription: 'Please try again or return to My Groups.',
+  retry: 'Retry',
+  heroSubline: 'Quick overview',
+  lockTitle: 'Lock group',
+  analyticsTitle: 'Analytics',
+  settingsTitle: 'Open settings',
+  menuActionTitle: 'Open quick menu',
+  warningsTitle: 'Recent warnings',
+  warningsHint: 'Last automated interventions',
+  warningsEmpty: 'No warnings in the last 24 hours.',
+  actionsTitle: 'Latest bot actions',
+  actionsHint: 'Firewall automation log',
+  actionsEmpty: 'No automated actions recorded yet.',
+  removedTitle: 'Bot is not an admin here',
+  removedDescription: 'Re-add the bot to restore automations and protections.',
+  toastLockEnabled: 'Group locked. Members cannot send messages.',
+  toastLockDisabled: 'Group unlocked. Members can chat again.',
+  quickMenu: 'Open modules',
+  menuGuidance: 'Tap the menu button to open settings and choose the section you need.',
+  viewMore: 'View all warnings',
+};
 
 type LocationState = {
   group?: ManagedGroup;
-  action?: string;
 };
 
-type SummaryCard = {
-  key: string;
-  icon: string;
-  title: string;
-  value: string;
-  description: string;
-  trendLabel?: string;
-  trendTone?: "positive" | "negative" | "neutral";
-  tone?: "default" | "warning" | "danger" | "success";
-  footer?: ReactNode;
-};
+function initialsFromTitle(title: string): string {
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return '?';
+  }
+  if (words.length === 1) {
+    return words[0].charAt(0).toUpperCase();
+  }
+  return `${words[0].charAt(0)}${words[1].charAt(0)}`.toUpperCase();
+}
 
-const TEXT = {
-  loadingHeader: "Loading",
-  loadingDescription: "Please wait a moment.",
-  errorHeader: "Error loading",
-  errorAction: "Retry",
-  notFoundHeader: "Group not found",
-  notFoundDescription: "Tap the button below to return to the group list.",
-  back: "Back",
-  headerSubtitle: "Admin panel",
-  modulesButton: "Open menu",
-  analyticsButton: "View full analytics",
-  trendSuffix: "Compared to yesterday",
-  expiredLabel: "Credits expired",
-  expiredDescription: "Renewal is required to continue the service.",
-  activeDescription: "until the end of the current cycle",
-  renewalAction: "Renew credits",
-  summary: {
-    members: {
-      title: "Total members",
-      description: "Live group member stats",
-      icon: "👥",
-    },
-    remaining: {
-      title: "Remaining credits",
-      icon: "⏳",
-    },
-    messages: {
-      title: "Today's messages",
-      description: "Today's group activity volume",
-      icon: "💬",
-    },
-    newMembers: {
-      title: "Today's new members",
-      description: "Today's entries",
-      icon: "➕",
-    },
-  },
-};
+function formatRelative(timestamp: string): string {
+  const diff = Date.now() - new Date(timestamp).getTime();
+  const minutes = Math.max(1, Math.round(diff / 60_000));
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+  const days = Math.round(hours / 24);
+  return `${days}d ago`;
+}
+
+function severityClass(severity: GroupWarning['severity']): string {
+  switch (severity) {
+    case 'critical':
+      return styles.severityCritical;
+    case 'warning':
+      return styles.severityWarning;
+    default:
+      return styles.severityInfo;
+  }
+}
+
+function resolveCreditBadge(group: ManagedGroup, remainingMs: number, isExpired: boolean): { label: string; className: string } {
+  if (group.status.kind === 'removed') {
+    return { label: 'Removed', className: styles.statusBadgeDanger };
+  }
+  if (isExpired || group.status.kind === 'expired') {
+    return { label: 'Expired', className: styles.statusBadgeDanger };
+  }
+
+  const daysLeft = group.status.kind === 'active'
+    ? typeof group.status.daysLeft === 'number'
+      ? group.status.daysLeft
+      : Math.max(0, Math.ceil(remainingMs / DAY_MS))
+    : Math.max(0, Math.ceil(remainingMs / DAY_MS));
+
+  if (daysLeft <= 5) {
+    return { label: `Expiring in ${daysLeft} days`, className: styles.statusBadgeDanger };
+  }
+  if (daysLeft <= 10) {
+    return { label: `Expiring in ${daysLeft} days`, className: styles.statusBadgeWarning };
+  }
+  return { label: `Credit: ${daysLeft} days left`, className: styles.statusBadge };
+}
+
+function trendClass(direction: 'up' | 'down' | 'flat'): string {
+  if (direction === 'up') {
+    return styles.deltaPositive;
+  }
+  if (direction === 'down') {
+    return styles.deltaNegative;
+  }
+  return styles.deltaNeutral;
+}
 
 export function GroupDashboardPage() {
   const navigate = useNavigate();
@@ -81,6 +120,8 @@ export function GroupDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
     if (!groupId) {
@@ -117,226 +158,329 @@ export function GroupDashboardPage() {
 
   const group = detail?.group ?? state.group;
   const metrics = detail?.metrics;
+  const warnings = detail?.warnings ?? [];
+  const actions = detail?.botActions ?? [];
 
-  const trendToneFor = useCallback((direction: "up" | "down" | "flat"): SummaryCard["trendTone"] => {
-    if (direction === "up") {
-      return "positive";
-    }
-    if (direction === "down") {
-      return "negative";
-    }
-    return "neutral";
-  }, []);
+  const creditBadge = group && metrics
+    ? resolveCreditBadge(group, metrics.remainingMs, metrics.isExpired)
+    : null;
 
-  const summaryCards = useMemo<SummaryCard[]>(() => {
+  const stats = useMemo(() => {
     if (!metrics) {
       return [];
     }
-
-    const remainingLabel = metrics.isExpired
-      ? TEXT.expiredLabel
-      : formatDurationFromMs(metrics.remainingMs);
-
-    const remainingTone: "default" | "danger" = metrics.isExpired ? "danger" : "default";
+    const membersDelta = formatSignedPercent(metrics.membersTrend.direction, metrics.membersTrend.percent);
+    const messagesDelta = formatSignedPercent(metrics.messagesTrend.direction, metrics.messagesTrend.percent);
+    const newcomersDelta = formatSignedPercent(metrics.newMembersTrend.direction, metrics.newMembersTrend.percent);
 
     return [
       {
-        key: "members",
-        icon: TEXT.summary.members.icon,
-        title: TEXT.summary.members.title,
+        key: 'members',
+        label: 'Members',
         value: formatNumber(metrics.membersTotal),
-        description: TEXT.summary.members.description,
-        trendLabel: `${formatSignedPercent(metrics.membersTrend.direction, metrics.membersTrend.percent)} ${TEXT.trendSuffix}`,
-        trendTone: trendToneFor(metrics.membersTrend.direction),
+        delta: `${membersDelta} vs yesterday`,
+        tone: trendClass(metrics.membersTrend.direction),
       },
       {
-        key: "remaining",
-        icon: TEXT.summary.remaining.icon,
-        title: TEXT.summary.remaining.title,
-        value: remainingLabel,
-        description: metrics.isExpired ? TEXT.expiredDescription : TEXT.activeDescription,
-        trendTone: "neutral",
-        tone: remainingTone,
-        footer: metrics.isExpired ? (
-          <Button
-            size="s"
-            mode="filled"
-            stretched
-            onClick={() => setMenuOpen(true)}
-          >
-            {TEXT.renewalAction}
-          </Button>
-        ) : undefined,
-      },
-      {
-        key: "messages",
-        icon: TEXT.summary.messages.icon,
-        title: TEXT.summary.messages.title,
+        key: 'messages',
+        label: "Today's messages",
         value: formatNumber(metrics.messagesToday),
-        description: TEXT.summary.messages.description,
-        trendLabel: `${formatSignedPercent(metrics.messagesTrend.direction, metrics.messagesTrend.percent)} ${TEXT.trendSuffix}`,
-        trendTone: trendToneFor(metrics.messagesTrend.direction),
+        delta: `${messagesDelta} vs yesterday`,
+        tone: trendClass(metrics.messagesTrend.direction),
       },
       {
-        key: "newMembers",
-        icon: TEXT.summary.newMembers.icon,
-        title: TEXT.summary.newMembers.title,
+        key: 'newMembers',
+        label: 'New members',
         value: formatNumber(metrics.newMembersToday),
-        description: TEXT.summary.newMembers.description,
-        trendLabel: `${formatSignedPercent(metrics.newMembersTrend.direction, metrics.newMembersTrend.percent)} ${TEXT.trendSuffix}`,
-        trendTone: trendToneFor(metrics.newMembersTrend.direction),
+        delta: `${newcomersDelta} vs yesterday`,
+        tone: trendClass(metrics.newMembersTrend.direction),
       },
     ];
-  }, [metrics, trendToneFor]);
+  }, [metrics]);
 
-  const handleMenuSelect = useCallback(
-    (key: string) => {
-      if (!groupId) {
-        return;
-      }
-      switch (key) {
-        case "home":
-          break;
-        case "settings":
-          navigate(`/groups/${groupId}/settings/general`, { state: { group } });
-          break;
-        case "bans":
-          navigate(`/groups/${groupId}/settings/bans`, { state: { group } });
-          break;
-        case "mute":
-          navigate(`/groups/${groupId}/settings/mute`, { state: { group } });
-          break;
-        case "limits":
-          navigate(`/groups/${groupId}/settings/limits`, { state: { group } });
-          break;
-        case "mandatory":
-          navigate(`/groups/${groupId}/settings/mandatory`, { state: { group } });
-          break;
-        case "texts":
-          navigate(`/groups/${groupId}/settings/texts`, { state: { group } });
-          break;
-        case "analytics":
-          navigate(`/groups/${groupId}/analytics`, { state: { group } });
-          break;
-        case "stars":
-          navigate("/stars", { state: { focusGroupId: groupId } });
-          break;
-        case "giveaway":
-          navigate("/giveaways", { state: { focusGroupId: groupId } });
-          break;
-        default:
-          console.info(`[group-dashboard] menu item '${key}' selected`);
-      }
-    },
-    [groupId, group, navigate],
-  );
-
-  const renderContent = () => {
-    if (loading && !detail) {
-      return (
-        <div className={styles.loading}>
-          {Array.from({ length: 4 }).map((_, index) => (
-            <GroupCardSkeleton key={index} />
-          ))}
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <Placeholder header={TEXT.errorHeader} description={error.message}>
-          <Button mode="filled" onClick={() => navigate(0)}>
-            {TEXT.errorAction}
-          </Button>
-        </Placeholder>
-      );
-    }
-
-    if (!group || !metrics) {
-      return (
-        <Placeholder header={TEXT.notFoundHeader} description={TEXT.notFoundDescription}>
-          <Button mode="filled" onClick={() => navigate("/")}>
-            {TEXT.back}
-          </Button>
-        </Placeholder>
-      );
-    }
-
-    return (
-      <>
-        <div className={styles.statsGrid}>
-          {summaryCards.map((card) => (
-            <StatCard
-              key={card.key}
-              icon={card.icon}
-              title={card.title}
-              value={card.value}
-              description={card.description}
-              trendLabel={card.trendLabel}
-              trendTone={card.trendTone}
-              tone={card.tone}
-              footer={card.footer}
-            />
-          ))}
-        </div>
-        <div className={styles.footerCtas}>
-          <Button mode="outline" size="m" stretched onClick={() => setMenuOpen(true)}>
-            {TEXT.modulesButton}
-          </Button>
-          <Button
-            mode="filled"
-            size="m"
-            stretched
-            onClick={() => navigate(`/groups/${groupId}/analytics`, { state: { group } })}
-          >
-            {TEXT.analyticsButton}
-          </Button>
-        </div>
-      </>
-    );
+  const toggleLock = (next?: boolean) => {
+    const nextState = typeof next === 'boolean' ? next : !locked;
+    setLocked(nextState);
+    setToast(nextState ? TEXT.toastLockEnabled : TEXT.toastLockDisabled);
   };
 
+  const handleOpenMenu = () => {
+    if (!groupId) {
+      return;
+    }
+    console.info('[telemetry] group_menu_opened_hint', groupId);
+    setMenuOpen(true);
+  };
+
+  const handleOpenSettings = () => {
+    if (!groupId) {
+      return;
+    }
+
+    navigate(`/groups/${groupId}/settings/general`, { state: { group } });
+  };
+
+  const handleAnalytics = () => {
+    if (!groupId) {
+      return;
+    }
+
+    navigate(`/groups/${groupId}/analytics`, { state: { group } });
+  };
+
+  const handleRetry = useCallback(() => {
+    if (!groupId) {
+      return;
+    }
+    setDetail(null);
+    setError(null);
+    setLoading(true);
+    void fetchGroupDetails(groupId)
+      .then((data) => {
+        setDetail(data);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err : new Error(String(err)));
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [groupId]);
+
+
+
+  if (!groupId) {
+    return (
+      <Placeholder
+        header={TEXT.errorHeader}
+        description='Group identifier is missing.'
+      />
+    );
+  }
+
+  if (loading && !group) {
+    return (
+      <Placeholder
+        header={TEXT.loadingHeader}
+        description={TEXT.loadingDescription}
+      />
+    );
+  }
+
+  if (error) {
+    return (
+      <Placeholder
+        header={TEXT.errorHeader}
+        description={TEXT.errorDescription}
+      >
+        <Button mode='filled' onClick={handleRetry}>
+          {TEXT.retry}
+        </Button>
+      </Placeholder>
+    );
+  }
+
+  if (!group || !metrics) {
+    return (
+      <Placeholder
+        header='Group unavailable'
+        description='This group could not be loaded. Please return to My Groups.'
+      />
+    );
+  }
+
   return (
-    <div className={styles.page} dir="ltr">
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            {TEXT.back}
-          </Button>
-        </div>
-        <div className={styles.headerCenter}>
+    <div className={styles.page} dir='ltr'>
+      <section className={styles.heroCard}>
+        <IconButton
+          className={styles.menuButton}
+          onClick={handleOpenMenu}
+          aria-label={TEXT.quickMenu}
+        >
+          <span className={styles.menuBurger} aria-hidden='true'>
+            <span />
+            <span />
+            <span />
+          </span>
+        </IconButton>
+        <div className={styles.heroHeader}>
           <Avatar
             size={48}
-            src={group?.photoUrl ?? undefined}
-            acronym={group?.photoUrl ? undefined : group?.title?.charAt(0).toUpperCase() ?? "A"}
-            alt={group?.title ?? "group"}
+            src={group.photoUrl ?? undefined}
+            acronym={group.photoUrl ? undefined : initialsFromTitle(group.title)}
+            alt={group.title}
           />
-          <div className={styles.headerTitles}>
-            <Title level="3" className={styles.groupName}>
-              {group ? group.title : TEXT.loadingHeader}
-            </Title>
-            <Text weight="2" className={styles.groupSubtitle}>
-              {TEXT.headerSubtitle}
-            </Text>
+          <div className={styles.heroMeta}>
+            <h1 className={styles.heroTitle}>{group.title}</h1>
+            <p className={styles.heroSubline}>{TEXT.heroSubline}</p>
+            {creditBadge && (
+              <span className={`${styles.statusBadge} ${creditBadge.className}`}>{creditBadge.label}</span>
+            )}
           </div>
         </div>
-        <div className={styles.headerRight}>
-          <IconButton aria-label={TEXT.modulesButton} onClick={() => setMenuOpen(true)}>
-            <span className={styles.burger}>
-              <span />
-              <span />
-              <span />
-            </span>
-          </IconButton>
+
+        <div className={styles.statsRow}>
+          {stats.map((stat) => (
+            <div key={stat.key} className={styles.statCard}>
+              <p className={styles.statLabel}>{stat.label}</p>
+              <p className={styles.statValue}>{stat.value}</p>
+              <span className={`${styles.statDelta} ${stat.tone}`}>{stat.delta}</span>
+            </div>
+          ))}
         </div>
-      </header>
-      <main className={styles.body}>{renderContent()}</main>
+
+        <p className={styles.heroHint}>{TEXT.menuGuidance}</p>
+
+        {group.status.kind === 'removed' && (
+          <div className={styles.removedBanner}>
+            <p className={styles.removedTitle}>{TEXT.removedTitle}</p>
+            <p className={styles.removedDescription}>{TEXT.removedDescription}</p>
+          </div>
+        )}
+
+        <div className={styles.quickActions}>
+          <button
+            type='button'
+            className={`${styles.actionButton} ${styles.actionToggle}`}
+            onClick={() => toggleLock()}
+          >
+            <span>{TEXT.lockTitle}</span>
+            <Switch
+              checked={locked}
+              onChange={(event) => {
+                event.stopPropagation();
+                toggleLock(event.target.checked);
+              }}
+              onClick={(event) => event.stopPropagation()}
+            />
+          </button>
+          <button
+            type='button'
+            className={`${styles.actionButton} ${styles.actionButtonSecondary}`}
+            onClick={handleOpenMenu}
+          >
+            {TEXT.menuActionTitle}
+          </button>
+          <button
+            type='button'
+            className={`${styles.actionButton} ${styles.actionButtonSecondary}`}
+            onClick={handleAnalytics}
+          >
+            {TEXT.analyticsTitle}
+          </button>
+          <button
+            type='button'
+            className={`${styles.actionButton} ${styles.actionButtonSecondary}`}
+            onClick={handleOpenSettings}
+          >
+            {TEXT.settingsTitle}
+          </button>
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <header className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>{TEXT.warningsTitle}</h2>
+          <span className={styles.sectionHint}>{TEXT.warningsHint}</span>
+        </header>
+        {warnings.length === 0 && (
+          <div className={styles.emptyItem}>{TEXT.warningsEmpty}</div>
+        )}
+        {warnings.length > 0 && (
+          <div className={styles.list}>
+            {warnings.slice(0, 4).map((warning) => (
+              <div key={warning.id} className={styles.listItem}>
+                <div className={styles.listItemContent}>
+                  <p className={styles.listItemTitle}>{warning.member}</p>
+                  <p className={styles.listItemSubtitle}>{warning.message}</p>
+                  <span className={`${styles.severityBadge} ${severityClass(warning.severity)}`}>
+                    {warning.rule}
+                  </span>
+                </div>
+                <span className={styles.listTimestamp}>{formatRelative(warning.timestamp)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {warnings.length > 4 && (
+          <div className={styles.secondaryActions}>
+            <button type='button' className={styles.secondaryButton}>{TEXT.viewMore}</button>
+          </div>
+        )}
+      </section>
+
+      <section className={styles.section}>
+        <header className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>{TEXT.actionsTitle}</h2>
+          <span className={styles.sectionHint}>{TEXT.actionsHint}</span>
+        </header>
+        {actions.length === 0 && (
+          <div className={styles.emptyItem}>{TEXT.actionsEmpty}</div>
+        )}
+        {actions.length > 0 && (
+          <div className={styles.list}>
+            {actions.slice(0, 5).map((action: GroupBotAction) => (
+              <div key={action.id} className={styles.listItem}>
+                <div className={styles.listItemContent}>
+                  <p className={styles.listItemTitle}>{action.action}</p>
+                  <p className={styles.listItemSubtitle}>
+                    {action.target ? `Target: ${action.target}` : 'System action'}
+                  </p>
+                </div>
+                <span className={styles.listTimestamp}>{formatRelative(action.timestamp)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <GroupMenuDrawer
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        activeKey="home"
-        onSelect={handleMenuSelect}
+        activeKey='home'
+        onSelect={(key) => {
+          if (!groupId) {
+            return;
+          }
+          switch (key) {
+            case 'home':
+              navigate(`/groups/${groupId}`, { state: { group } });
+              break;
+            case 'settings':
+              navigate(`/groups/${groupId}/settings/general`, { state: { group } });
+              break;
+            case 'bans':
+              navigate(`/groups/${groupId}/settings/bans`, { state: { group } });
+              break;
+            case 'limits':
+              navigate(`/groups/${groupId}/settings/limits`, { state: { group } });
+              break;
+            case 'mute':
+              navigate(`/groups/${groupId}/settings/mute`, { state: { group } });
+              break;
+            case 'mandatory':
+              navigate(`/groups/${groupId}/settings/mandatory`, { state: { group } });
+              break;
+            case 'texts':
+              navigate(`/groups/${groupId}/settings/texts`, { state: { group } });
+              break;
+            case 'analytics':
+              navigate(`/groups/${groupId}/analytics`, { state: { group } });
+              break;
+            default:
+              console.info(`[group-dashboard] unknown menu item '${key}' selected`);
+          }
+        }}
       />
+
+      {toast && (
+        <Snackbar onClose={() => setToast('')} className={styles.snackbar}>
+          {toast}
+        </Snackbar>
+      )}
     </div>
   );
 }
+
+

@@ -1,104 +1,56 @@
-﻿import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Button, Input, Placeholder, Snackbar, Switch, Text, Title } from "@telegram-apps/telegram-ui";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Button, Input, Placeholder, Snackbar, Switch, Text } from '@telegram-apps/telegram-ui';
 
-import { Page } from "@/components/Page.tsx";
-import { classNames } from "@/css/classnames.ts";
 import {
   createGiveaway,
   fetchDashboardSnapshot,
   fetchGiveawayConfig,
-  fetchGiveawayDashboard,
-} from "@/features/dashboard/api.ts";
+} from '@/features/dashboard/api.ts';
 import type {
   GiveawayConfig,
   GiveawayCreationPayload,
-  GiveawayCreationResult,
   GiveawayPlanOption,
   ManagedGroup,
-} from "@/features/dashboard/types.ts";
-import { formatNumber, toPersianDigits } from "@/utils/format.ts";
+} from '@/features/dashboard/types.ts';
 
-import styles from "./GiveawayPages.module.css";
-
-const MIN_WINNERS = 1;
-const MIN_DURATION = 1;
+import { GiveawayTabs } from './GiveawayTabs';
+import styles from './GiveawayPages.module.css';
 
 type LocationState = {
   focusGroupId?: string;
 };
 
 const TEXT = {
-  loading: {
-    header: "Loading",
-    description: "Please wait a moment.",
-  },
-  error: {
-    header: "Unable to load giveaway data",
-    description: "We couldn't fetch enough information to create a giveaway.",
-    action: "Retry",
-  },
-  header: {
-    title: "Create Giveaway",
-    manage: "Manage giveaways",
-  },
-  group: {
-    title: "Choose the host group",
-    statusActive: "Active",
-    statusInactive: "Inactive",
-  },
-  reward: {
-    title: "Choose a reward",
-    priceSuffix: "stars per winner",
-    daySuffix: "day access",
-    basePrefix: "Base cost: ",
-  },
-  winners: "Number of winners",
-  duration: {
-    title: "Giveaway duration",
-    custom: "Custom duration",
-    optionSuffix: "hours",
-    minimumPrefix: "Minimum",
-  },
-  requirements: {
-    title: "Requirements & notifications",
-    premiumTitle: "Premium users only",
-    premiumNote: "Participants must have Telegram Premium enabled.",
-    startTitle: "Start notification",
-    startNote: "Announce the giveaway start in the target channel.",
-    endTitle: "End notification",
-    endNote: "Announce the winners in the channel when it finishes.",
-    extraTitle: "Additional channel (optional)",
-    extraPlaceholder: "@channel",
-    extraNote: "Promote a second channel alongside the giveaway.",
-    titleLabel: "Giveaway title (optional)",
-  },
-  summary: {
-    title: "Cost summary",
-    pricePerWinner: "Price per winner",
-    totalPrefix: "Total cost (",
-    totalSuffix: " winner(s))",
-    insufficient: "Balance is not sufficient. Please top up first.",
-  },
-  actions: {
-    create: "Start giveaway",
-    processing: "Creating...",
-    view: "View giveaway",
-  },
-} as const;
+  loading: 'Loading giveaway builder...',
+  loadError: 'Unable to load giveaway data.',
+  retry: 'Retry',
+  stepReward: 'Step 1 - Choose reward',
+  stepGroup: 'Step 2 - Host & channels',
+  stepLinks: 'Step 3 - Extra links',
+  stepDuration: 'Step 4 - Timing & winners',
+  stepRequirements: 'Step 5 - Participant rules',
+  stepSummary: 'Step 6 - Review & confirm',
+  giftsHint: 'Pick the reward your winners will receive.',
+  groupTitle: 'Included channels/groups',
+  channelsHint: 'Select the host group and add extra channels that will be required.',
+  linksTitle: 'Other links',
+  linksHint: 'Add external links participants must visit (optional, up to 10).',
+  durationTitle: 'Duration',
+  requirementsTitle: 'Participant requirements',
+  notificationsTitle: 'Notifications',
+  summaryTitle: 'Summary',
+  addChannel: 'Add channel',
+  addLink: 'Add link',
+  startGiveaway: 'Start Giveaway',
+  processing: 'Creating...',
+  winnersLabel: 'Number of winners',
+  durationCustom: 'Custom (hours)',
+  success: 'Giveaway created successfully.',
+};
 
-const balanceLabel = (value: number) => `Balance: ${formatNumber(value)} stars`;
-const groupMembersLabel = (count: number) => `${formatNumber(count)} members`;
-const groupStatusLabel = (kind: string) =>
-  `Status: ${kind === "active" ? TEXT.group.statusActive : TEXT.group.statusInactive}`;
-const rewardPriceLabel = (value: number) => `${formatNumber(value)} ${TEXT.reward.priceSuffix}`;
-const rewardDaysLabel = (days: number) => `${toPersianDigits(days)} ${TEXT.reward.daySuffix}`;
-const rewardBaseLabel = (value: number) => `${TEXT.reward.basePrefix}${formatNumber(value)} stars`;
-const durationOptionLabel = (hours: number) => `${toPersianDigits(hours)} ${TEXT.duration.optionSuffix}`;
-const durationMinimumLabel = (min: number) =>
-  `${TEXT.duration.minimumPrefix} ${toPersianDigits(min)} ${TEXT.duration.optionSuffix}`;
-const summaryTotalLabel = (count: number) =>
-  `${TEXT.summary.totalPrefix}${formatNumber(count)}${TEXT.summary.totalSuffix}`;
+const MIN_WINNERS = 1;
+const MIN_DURATION = 1;
 
 export function CreateGiveawayPage() {
   const navigate = useNavigate();
@@ -108,59 +60,57 @@ export function CreateGiveawayPage() {
 
   const [config, setConfig] = useState<GiveawayConfig | null>(null);
   const [groups, setGroups] = useState<ManagedGroup[]>([]);
-  const [balance, setBalance] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [snackbar, setSnackbar] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
 
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [winners, setWinners] = useState<number>(MIN_WINNERS);
-  const [selectedDuration, setSelectedDuration] = useState<number>(6);
+  const [durationOption, setDurationOption] = useState<number | 'custom'>(6);
   const [customDuration, setCustomDuration] = useState<number>(6);
-  const [useCustomDuration, setUseCustomDuration] = useState(false);
   const [premiumOnly, setPremiumOnly] = useState(false);
+  const [chatBoosterOnly, setChatBoosterOnly] = useState(false);
+  const [inviteFriend, setInviteFriend] = useState(false);
   const [notifyStart, setNotifyStart] = useState(true);
   const [notifyEnd, setNotifyEnd] = useState(true);
-  const [extraChannel, setExtraChannel] = useState("");
-  const [title, setTitle] = useState("");
-  const [processing, setProcessing] = useState(false);
-  const [snackbar, setSnackbar] = useState<string | null>(null);
-  const [lastResult, setLastResult] = useState<GiveawayCreationResult | null>(null);
+  const [extraChannel, setExtraChannel] = useState('');
+  const [includedChannels, setIncludedChannels] = useState<string[]>([]);
+  const [links, setLinks] = useState<string[]>([]);
+  const [title, setTitle] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [cfg, snapshot] = await Promise.all([
+        fetchGiveawayConfig(),
+        fetchDashboardSnapshot(),
+      ]);
+      const manageable = snapshot.groups.filter((group) => group.canManage && group.status.kind !== 'removed');
+      setGroups(manageable);
+      setConfig(cfg);
+
+      const defaultGroup = focusGroupId && manageable.some((group) => group.id === focusGroupId)
+        ? focusGroupId
+        : manageable[0]?.id ?? null;
+      const defaultPlan = cfg.plans[0]?.id ?? null;
+      const defaultDuration = cfg.durationOptions[0] ?? 6;
+
+      setSelectedGroupId(defaultGroup);
+      setSelectedPlanId(defaultPlan);
+      setDurationOption(defaultDuration);
+      setCustomDuration(defaultDuration);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setLoading(false);
+    }
+  }, [focusGroupId]);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const [configData, snapshot, dashboard] = await Promise.all([
-          fetchGiveawayConfig(),
-          fetchDashboardSnapshot(),
-          fetchGiveawayDashboard(),
-        ]);
-        const manageable = snapshot.groups.filter((group) => group.canManage && group.status.kind !== "removed");
-        setGroups(manageable);
-        setConfig(configData);
-        setBalance(dashboard.balance);
-        const defaultGroup =
-          focusGroupId && manageable.some((group) => group.id === focusGroupId)
-            ? focusGroupId
-            : manageable[0]?.id ?? null;
-        const defaultPlan = configData.plans[0]?.id ?? null;
-        const defaultDuration = configData.durationOptions[0] ?? 6;
-        setSelectedGroupId(defaultGroup);
-        setSelectedPlanId(defaultPlan);
-        setSelectedDuration(defaultDuration);
-        setCustomDuration(defaultDuration);
-        setUseCustomDuration(false);
-      } catch (err) {
-        const normalized = err instanceof Error ? err : new Error(String(err));
-        setError(normalized);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     void load();
-  }, [focusGroupId]);
+  }, [load]);
 
   const plan = useMemo<GiveawayPlanOption | null>(() => {
     if (!config || !selectedPlanId) {
@@ -169,6 +119,13 @@ export function CreateGiveawayPage() {
     return config.plans.find((item) => item.id === selectedPlanId) ?? null;
   }, [config, selectedPlanId]);
 
+  const durationHours = useMemo(() => {
+    if (durationOption === 'custom') {
+      return Math.max(MIN_DURATION, customDuration);
+    }
+    return durationOption;
+  }, [durationOption, customDuration]);
+
   const totalCost = useMemo(() => {
     if (!plan) {
       return 0;
@@ -176,10 +133,32 @@ export function CreateGiveawayPage() {
     return plan.pricePerWinner * Math.max(MIN_WINNERS, winners);
   }, [plan, winners]);
 
-  const durationValue = useMemo(() => {
-    const value = useCustomDuration ? customDuration : selectedDuration;
-    return Math.max(MIN_DURATION, value);
-  }, [useCustomDuration, customDuration, selectedDuration]);
+  const canSubmit = Boolean(selectedGroupId && plan && winners >= MIN_WINNERS && durationHours >= MIN_DURATION && !processing);
+
+  const handleAddChannel = () => {
+    const trimmed = extraChannel.trim();
+    if (!trimmed || includedChannels.includes(trimmed)) {
+      return;
+    }
+    setIncludedChannels((prev) => [...prev, trimmed]);
+    setExtraChannel('');
+  };
+
+  const handleRemoveChannel = (value: string) => {
+    setIncludedChannels((prev) => prev.filter((item) => item !== value));
+  };
+
+  const handleAddLink = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || links.includes(trimmed) || links.length >= 10) {
+      return;
+    }
+    setLinks((prev) => [...prev, trimmed]);
+  };
+
+  const handleRemoveLink = (value: string) => {
+    setLinks((prev) => prev.filter((item) => item !== value));
+  };
 
   const handleWinnersChange = (event: ChangeEvent<HTMLInputElement>) => {
     const parsed = Number(event.target.value);
@@ -199,245 +178,288 @@ export function CreateGiveawayPage() {
     setCustomDuration(Math.max(MIN_DURATION, parsed));
   };
 
-  const handleSubmit = useCallback(async () => {
-    if (!selectedGroupId || !plan) {
+  const submit = async () => {
+    if (!selectedGroupId || !plan || !config) {
       return;
     }
+
     const payload: GiveawayCreationPayload = {
       groupId: selectedGroupId,
       planId: plan.id,
       winners: Math.max(MIN_WINNERS, winners),
-      durationHours: durationValue,
+      durationHours,
       premiumOnly,
+      chatBoosterOnly,
+      inviteUniqueFriend: inviteFriend,
+      includedChannels,
+      externalLinks: links,
       notifyStart,
       notifyEnd,
-      extraChannel: extraChannel.trim().length > 1 ? extraChannel.trim() : undefined,
+      extraChannel: includedChannels[0] ?? null,
       title: title.trim() || undefined,
     };
+
+    setProcessing(true);
     try {
-      setProcessing(true);
-      const result = await createGiveaway(payload);
-      setLastResult(result);
-      setBalance((prev) => Math.max(0, prev - result.totalCost));
-      setSnackbar(`Giveaway created successfully. Total cost: ${formatNumber(result.totalCost)} stars`);
+      const response = await createGiveaway(payload);
+      setSnackbar(TEXT.success);
+      navigate(`/giveaway/join/${response.id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setSnackbar(message);
     } finally {
       setProcessing(false);
     }
-  }, [selectedGroupId, plan, winners, durationValue, premiumOnly, notifyStart, notifyEnd, extraChannel, title]);
-
-  const handleCloseSnackbar = useCallback(() => {
-    setSnackbar(null);
-  }, []);
-
-  const disableSubmit = !selectedGroupId || !plan || processing || durationValue <= 0;
-  const insufficientBalance = plan ? totalCost > balance : false;
+  };
 
   if (loading) {
     return (
-      <Page>
-        <div className={styles.page} dir="ltr">
-          <Placeholder header={TEXT.loading.header} description={TEXT.loading.description} />
-        </div>
-      </Page>
+      <div className={styles.page} dir='ltr'>
+        <GiveawayTabs />
+        <Placeholder header={TEXT.loading} />
+      </div>
     );
   }
 
   if (error || !config || groups.length === 0) {
     return (
-      <Page>
-        <div className={styles.page} dir="ltr">
-          <Placeholder header={TEXT.error.header} description={error?.message ?? TEXT.error.description}>
-            <Button mode="filled" onClick={() => window.location.reload()}>
-              {TEXT.error.action}
-            </Button>
-          </Placeholder>
-        </div>
-      </Page>
+      <div className={styles.page} dir='ltr'>
+        <GiveawayTabs />
+        <Placeholder header={TEXT.loadError} description={error?.message}>
+          <Button mode='filled' onClick={() => void load()}>{TEXT.retry}</Button>
+        </Placeholder>
+      </div>
     );
   }
 
   return (
-    <Page>
-      <div className={styles.page} dir="ltr">
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <Title level="3" className={styles.sectionTitle}>
-              {TEXT.header.title}
-            </Title>
-            <div className={styles.inline}>
-              <Text weight="2">{balanceLabel(balance)}</Text>
-              <Button mode="plain" size="s" onClick={() => navigate("/giveaways")}>
-                {TEXT.header.manage}
-              </Button>
-            </div>
-          </div>
+    <div className={styles.page} dir='ltr'>
+      <GiveawayTabs />
 
-          <div className={styles.grid}>
-            <div className={styles.inputRow}>
-              <Text weight="2">{TEXT.group.title}</Text>
-              <div className={styles.planGrid}>
-                {groups.map((group) => {
-                  const active = group.id === selectedGroupId;
-                  return (
-                    <div
-                      key={group.id}
-                      className={classNames(styles.planCard, active && styles.planCardActive)}
-                      onClick={() => setSelectedGroupId(group.id)}
-                    >
-                      <Text weight="2">{group.title}</Text>
-                      <Text className={styles.planDescription}>{groupMembersLabel(group.membersCount)}</Text>
-                      <Text className={styles.note}>{groupStatusLabel(group.status.kind)}</Text>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className={styles.inputRow}>
-              <Text weight="2">{TEXT.reward.title}</Text>
-              <div className={styles.planGrid}>
-                {config.plans.map((option) => {
-                  const active = option.id === selectedPlanId;
-                  return (
-                    <div
-                      key={option.id}
-                      className={classNames(styles.planCard, active && styles.planCardActive)}
-                      onClick={() => setSelectedPlanId(option.id)}
-                    >
-                      <Text weight="2" className={styles.planPrice}>
-                        {rewardPriceLabel(option.pricePerWinner)}
-                      </Text>
-                      <Text className={styles.planDescription}>{rewardDaysLabel(option.days)}</Text>
-                      <Text className={styles.note}>{rewardBaseLabel(option.basePrice)}</Text>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className={styles.inputRow}>
-              <Text weight="2">{TEXT.winners}</Text>
-              <Input type="number" value={winners} min={MIN_WINNERS} onChange={handleWinnersChange} />
-            </div>
-
-            <div className={styles.inputRow}>
-              <Text weight="2">{TEXT.duration.title}</Text>
-              <div className={styles.planGrid}>
-                {config.durationOptions.map((option) => {
-                  const active = !useCustomDuration && option === selectedDuration;
-                  return (
-                    <div
-                      key={option}
-                      className={classNames(styles.planCard, active && styles.planCardActive)}
-                      onClick={() => {
-                        setUseCustomDuration(false);
-                        setSelectedDuration(option);
-                      }}
-                    >
-                      <Text weight="2">{durationOptionLabel(option)}</Text>
-                    </div>
-                  );
-                })}
-                <div
-                  className={classNames(styles.planCard, useCustomDuration && styles.planCardActive)}
-                  onClick={() => setUseCustomDuration(true)}
-                >
-                  <Text weight="2">{TEXT.duration.custom}</Text>
-                  <Input
-                    type="number"
-                    value={customDuration}
-                    min={MIN_DURATION}
-                    onChange={handleCustomDurationChange}
-                    onClick={(event) => event.stopPropagation()}
-                  />
-                  <Text className={styles.note}>{durationMinimumLabel(MIN_DURATION)}</Text>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.inputRow}>
-              <Text weight="2">{TEXT.requirements.title}</Text>
-              <div className={styles.list}>
-                <div className={styles.requirementItem}>
-                  <div>
-                    <Text weight="2">{TEXT.requirements.premiumTitle}</Text>
-                    <Text className={styles.note}>{TEXT.requirements.premiumNote}</Text>
-                  </div>
-                  <Switch checked={premiumOnly} onChange={(event) => setPremiumOnly(event.target.checked)} />
-                </div>
-                <div className={styles.requirementItem}>
-                  <div>
-                    <Text weight="2">{TEXT.requirements.startTitle}</Text>
-                    <Text className={styles.note}>{TEXT.requirements.startNote}</Text>
-                  </div>
-                  <Switch checked={notifyStart} onChange={(event) => setNotifyStart(event.target.checked)} />
-                </div>
-                <div className={styles.requirementItem}>
-                  <div>
-                    <Text weight="2">{TEXT.requirements.endTitle}</Text>
-                    <Text className={styles.note}>{TEXT.requirements.endNote}</Text>
-                  </div>
-                  <Switch checked={notifyEnd} onChange={(event) => setNotifyEnd(event.target.checked)} />
-                </div>
-                <div className={styles.inputRow}>
-                  <Text weight="2">{TEXT.requirements.extraTitle}</Text>
-                  <Input
-                    value={extraChannel}
-                    onChange={(event) => setExtraChannel(event.target.value)}
-                    placeholder={TEXT.requirements.extraPlaceholder}
-                  />
-                  <Text className={styles.note}>{TEXT.requirements.extraNote}</Text>
-                </div>
-                <div className={styles.inputRow}>
-                  <Text weight="2">{TEXT.requirements.titleLabel}</Text>
-                  <Input value={title} onChange={(event) => setTitle(event.target.value)} />
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.inputRow}>
-              <Text weight="2">{TEXT.summary.title}</Text>
-              <div className={styles.summaryCard}>
-                <span className={styles.summaryLabel}>{TEXT.summary.pricePerWinner}</span>
-                <span className={styles.summaryValue}>
-                  {plan ? `${formatNumber(plan.pricePerWinner)} stars` : "--"}
-                </span>
-                <span className={styles.summaryLabel}>{summaryTotalLabel(winners)}</span>
-                <span className={styles.summaryValue}>{formatNumber(totalCost)} stars</span>
-                {insufficientBalance && (
-                  <Text className={styles.note}>{TEXT.summary.insufficient}</Text>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.inline}>
-            <Button
-              mode="filled"
-              size="m"
-              stretched
-              disabled={disableSubmit || insufficientBalance}
-              onClick={handleSubmit}
+      <section className={styles.section}>
+        <Text weight='2' className={styles.stepTitle}>{TEXT.stepReward}</Text>
+        <Text className={styles.formHint}>{TEXT.giftsHint}</Text>
+        <div className={styles.planGrid}>
+          {config.plans.map((item) => (
+            <button
+              key={item.id}
+              type='button'
+              className={`${styles.planCard} ${item.id === selectedPlanId ? styles.planCardActive : ''}`}
+              onClick={() => setSelectedPlanId(item.id)}
             >
-              {processing ? TEXT.actions.processing : TEXT.actions.create}
-            </Button>
-            {lastResult && (
-              <Button mode="plain" size="s" onClick={() => navigate(`/giveaways/${lastResult.id}`)}>
-                {TEXT.actions.view}
-              </Button>
-            )}
-          </div>
-        </section>
+              <span className={styles.planDays}>{item.days} day access</span>
+              <span className={styles.planPrice}>{item.pricePerWinner.toLocaleString()} Stars per winner</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
-        {snackbar && (
-          <Snackbar duration={3500} onClose={handleCloseSnackbar}>
-            {snackbar}
-          </Snackbar>
+      <section className={styles.section}>
+        <Text weight='2' className={styles.stepTitle}>{TEXT.stepGroup}</Text>
+        <Text className={styles.formHint}>{TEXT.channelsHint}</Text>
+        <div className={styles.groupGrid}>
+          {groups.map((group) => (
+            <button
+              key={group.id}
+              type='button'
+              className={`${styles.groupCard} ${group.id === selectedGroupId ? styles.groupCardActive : ''}`}
+              onClick={() => setSelectedGroupId(group.id)}
+            >
+              <Text className={styles.groupName}>{group.title}</Text>
+              <Text className={styles.groupMembers}>{group.membersCount.toLocaleString()} members</Text>
+            </button>
+          ))}
+        </div>
+        <div className={styles.inputRow}>
+          <Input
+            placeholder='@channel'
+            value={extraChannel}
+            onChange={(event) => setExtraChannel(event.target.value)}
+          />
+          <Button size='s' mode='filled' onClick={handleAddChannel}>{TEXT.addChannel}</Button>
+        </div>
+        {includedChannels.length > 0 && (
+          <div className={styles.tagRow}>
+            {includedChannels.map((channel) => (
+              <button
+                key={channel}
+                type='button'
+                className={styles.actionButton}
+                onClick={() => handleRemoveChannel(channel)}
+              >
+                {channel} x
+              </button>
+            ))}
+          </div>
         )}
-      </div>
-    </Page>
+      </section>
+
+      <section className={styles.section}>
+        <Text weight='2' className={styles.stepTitle}>{TEXT.stepLinks}</Text>
+        <Text className={styles.formHint}>{TEXT.linksHint}</Text>
+        <div className={styles.inputRow}>
+          <Input
+            placeholder='https://example.com'
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                const target = event.target as HTMLInputElement;
+                handleAddLink(target.value);
+                target.value = '';
+              }
+            }}
+          />
+          <Button
+            size='s'
+            mode='filled'
+            onClick={(event) => {
+              const input = event.currentTarget.previousElementSibling as HTMLInputElement | null;
+              if (input) {
+                handleAddLink(input.value);
+                input.value = '';
+              }
+            }}
+            disabled={links.length >= 10}
+          >
+            {TEXT.addLink}
+          </Button>
+        </div>
+        {links.length > 0 && (
+          <div className={styles.tagRow}>
+            {links.map((link) => (
+              <button
+                key={link}
+                type='button'
+                className={styles.actionButton}
+                onClick={() => handleRemoveLink(link)}
+              >
+                {link} x
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className={styles.section}>
+        <Text weight='2' className={styles.stepTitle}>{TEXT.stepDuration}</Text>
+        <div className={styles.inputRow}>
+          {config.durationOptions.map((option) => (
+            <button
+              key={option}
+              type='button'
+              className={`${styles.actionButton} ${option === durationOption ? styles.actionPrimary : ''}`}
+              onClick={() => setDurationOption(option)}
+            >
+              {option} hours
+            </button>
+          ))}
+          <button
+            type='button'
+            className={`${styles.actionButton} ${durationOption === 'custom' ? styles.actionPrimary : ''}`}
+            onClick={() => setDurationOption('custom')}
+          >
+            {TEXT.durationCustom}
+          </button>
+          {durationOption === 'custom' && (
+            <Input
+              type='number'
+              min={MIN_DURATION}
+              value={customDuration}
+              onChange={handleCustomDurationChange}
+            />
+          )}
+        </div>
+        <div className={styles.inputRow}>
+          <Text weight='2'>{TEXT.winnersLabel}</Text>
+          <Input type='number' min={MIN_WINNERS} value={winners} onChange={handleWinnersChange} />
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <Text weight='2' className={styles.stepTitle}>{TEXT.stepRequirements}</Text>
+        <div className={styles.toggleRow}>
+          <div className={styles.toggleText}>
+            <Text weight='2'>Premium users only</Text>
+            <Text className={styles.formHint}>Participants must have Telegram Premium.</Text>
+          </div>
+          <Switch checked={premiumOnly} onChange={(event) => setPremiumOnly(event.target.checked)} />
+        </div>
+        <div className={styles.toggleRow}>
+          <div className={styles.toggleText}>
+            <Text weight='2'>Chat booster only</Text>
+            <Text className={styles.formHint}>Limit to members boosting the host chat.</Text>
+          </div>
+          <Switch checked={chatBoosterOnly} onChange={(event) => setChatBoosterOnly(event.target.checked)} />
+        </div>
+        <div className={styles.toggleRow}>
+          <div className={styles.toggleText}>
+            <Text weight='2'>Invite a unique friend</Text>
+            <Text className={styles.formHint}>Require participants to bring one new member.</Text>
+          </div>
+          <Switch checked={inviteFriend} onChange={(event) => setInviteFriend(event.target.checked)} />
+        </div>
+
+        <Text weight='2' className={styles.subTitle}>{TEXT.notificationsTitle}</Text>
+        <div className={styles.toggleRow}>
+          <div className={styles.toggleText}>
+            <Text weight='2'>Announce start in channel</Text>
+          </div>
+          <Switch checked={notifyStart} onChange={(event) => setNotifyStart(event.target.checked)} />
+        </div>
+        <div className={styles.toggleRow}>
+          <div className={styles.toggleText}>
+            <Text weight='2'>Announce results in channel</Text>
+          </div>
+          <Switch checked={notifyEnd} onChange={(event) => setNotifyEnd(event.target.checked)} />
+        </div>
+        <Input
+          placeholder='Giveaway title (optional)'
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+      </section>
+
+      <section className={styles.section}>
+        <Text weight='2' className={styles.stepTitle}>{TEXT.stepSummary}</Text>
+        <div className={styles.summaryBox}>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryLabel}>Host group</span>
+            <span className={styles.summaryValue}>
+              {groups.find((group) => group.id === selectedGroupId)?.title ?? 'Not selected'}
+            </span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryLabel}>Reward</span>
+            <span className={styles.summaryValue}>{plan ? `${plan.days} days access` : 'Not selected'}</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryLabel}>Winners</span>
+            <span className={styles.summaryValue}>{Math.max(MIN_WINNERS, winners)}</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryLabel}>Duration</span>
+            <span className={styles.summaryValue}>{durationHours} hours</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryLabel}>Total cost</span>
+            <span className={styles.summaryValue}>{totalCost.toLocaleString()} Stars</span>
+          </div>
+        </div>
+        <Button
+          mode='filled'
+          size='l'
+          stretched
+          disabled={!canSubmit}
+          loading={processing}
+          onClick={submit}
+        >
+          {processing ? TEXT.processing : TEXT.startGiveaway}
+        </Button>
+      </section>
+
+      {snackbar && (
+        <Snackbar onClose={() => setSnackbar(null)}>{snackbar}</Snackbar>
+      )}
+    </div>
   );
 }

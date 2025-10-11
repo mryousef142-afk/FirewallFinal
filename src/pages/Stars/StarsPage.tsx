@@ -1,600 +1,440 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Avatar, Button, Input, Placeholder, Snackbar, Text, Title } from "@telegram-apps/telegram-ui";
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Avatar, Button, Input, Placeholder, Snackbar, Text } from '@telegram-apps/telegram-ui';
 
-import { Page } from "@/components/Page.tsx";
-import { classNames } from "@/css/classnames.ts";
 import {
   fetchStarsOverview,
   giftStarsToGroup,
   purchaseStarsForGroup,
   searchGroupsForStars,
-} from "@/features/dashboard/api.ts";
+} from '@/features/dashboard/api.ts';
 import type {
   GroupStarsStatus,
   ManagedGroup,
   StarsPlan,
   StarsOverview,
-  StarsStatus,
-} from "@/features/dashboard/types.ts";
-import { useOwnerProfile } from "@/features/dashboard/useOwnerProfile.ts";
-import { formatNumber, toPersianDigits } from "@/utils/format.ts";
+} from '@/features/dashboard/types.ts';
+import { formatNumber } from '@/utils/format.ts';
 
-import styles from "./StarsPage.module.css";
+import styles from './StarsPage.module.css';
 
-type LocationState = {
-  focusGroupId?: string;
-};
+type TargetMode = 'my-groups' | 'other' | 'giveaway';
+
+type TargetSelection =
+  | { kind: 'managed'; status: GroupStarsStatus }
+  | { kind: 'external'; group: ManagedGroup };
+
+const MIN_SEARCH_LENGTH = 5;
 
 const TEXT = {
-  badges: {
-    active: "Active",
-    expiring: "Expiring soon",
-    expired: "Expired",
-  } satisfies Record<GroupStarsStatus["status"], string>,
-  load: {
-    header: "Loading",
-    description: "Please wait a moment.",
+  stepTarget: 'Step 1 - Select target',
+  stepPlan: 'Step 2 - Choose plan',
+  stepConfirm: 'Step 3 - Confirm',
+  tabs: {
+    myGroups: 'My groups',
+    other: 'Other group',
+    giveaway: 'Create giveaway',
   },
-  error: {
-    header: "Failed to fetch stars information",
-    action: "Retry",
+  myGroupsEmpty: 'No managed groups ready for top-up.',
+  searchPlaceholder: 'Search by @username or ID (userid)',
+  searchHint: 'Enter at least 5 characters to search.',
+  searchEmpty: 'The bot is not a member of that group. Please add the bot to the group and try again.',
+  giveawayTitle: 'Create a giveaway',
+  giveawayDescription: 'Invite members to engage with your group by gifting extra uptime credits.',
+  giveawayAction: 'Open giveaway creator',
+  summary: {
+    group: 'Group',
+    plan: 'Plan',
+    total: 'Total Stars',
   },
-  overview: {
-    title: "Managed groups",
-    hint: "Tap a card to manage stars for that group",
-    empty: "No groups are connected yet.",
-    manageButton: "Select / manage",
-  },
-  plans: {
-    title: "Renewal plans",
-  },
-  purchase: {
-    title: "Purchase summary",
-    groupLabel: "Selected group",
-    planLabel: "Selected duration",
-    priceLabel: "Cost",
-    balanceLabel: "Your stars balance",
-    notSelected: "Not selected",
-    insufficient: "Balance is not sufficient.",
-    button: "Pay with stars",
-    processing: "Processing...",
-    refresh: "Refresh data",
-  },
-  gift: {
-    title: "Gift stars to another group",
-    placeholder: "Search by group or ID",
-    searching: "Searching...",
-    noResults: "No matching groups found.",
-    select: "Select",
-    button: "Gift stars",
-    processing: "Sending...",
-    insufficient: "Balance is not sufficient for this gift.",
-  },
-  success: {
-    purchase: (groupTitle: string, days: number) =>
-      `${groupTitle} extended for ${toPersianDigits(days)} day(s).`,
-    gift: (groupTitle: string, days: number) =>
-      `Sent ${toPersianDigits(days)} day(s) of stars to ${groupTitle}.`,
-    purchaseSnackbar: "Payment completed successfully.",
-    giftSnackbar: "Gift sent successfully.",
-    fallbackUser: "Unnamed",
+  pay: 'Pay with Stars',
+  insufficient: 'Not enough Stars',
+  loading: 'Loading Stars overview...',
+  loadError: 'Failed to load Stars data.',
+  retry: 'Retry',
+  snackbarPurchase: (group: string, days: number) => `Credit extended for ${group} by ${days} days`,
+  snackbarGift: (group: string, days: number) => `You extended ${group} by ${days} days`,
+  badge: {
+    active: 'Active',
+    expiring: 'Expiring soon',
+    expired: 'Expired',
   },
 };
 
-const BADGE_CLASSES: Record<GroupStarsStatus["status"], string> = {
-  active: styles.badgeActive,
-  expiring: styles.badgeExpiring,
-  expired: styles.badgeExpired,
-};
-
-function formatDaysRemaining(days: number): string {
-  if (days <= 0) {
-    return "No balance";
-  }
-  return `${toPersianDigits(days)} days remaining`;
+function planLabel(plan: StarsPlan): string {
+  return `${plan.days} days - ${formatNumber(plan.price)} Stars`;
 }
 
-function planDaysLabel(plan: StarsPlan): string {
-  return `${toPersianDigits(plan.days)} days`;
-}
-
-function planPriceLabel(plan: StarsPlan): string {
-  return `${formatNumber(plan.price)} stars`;
-}
-
-function resolveStarsStatus(days: number): StarsStatus {
-  if (days <= 0) {
-    return "expired";
+function findPlan(plans: StarsPlan[], planId: string | null): StarsPlan | null {
+  if (!planId) {
+    return null;
   }
-  if (days <= 5) {
-    return "expiring";
-  }
-  return "active";
+  return plans.find((plan) => plan.id === planId) ?? null;
 }
 
 export function StarsPage() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const locationState = (location.state ?? {}) as LocationState;
-  const focusGroupId = locationState.focusGroupId;
-  const { username } = useOwnerProfile();
-
   const [overview, setOverview] = useState<StarsOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(focusGroupId ?? null);
+  const [mode, setMode] = useState<TargetMode>('my-groups');
+  const [selectedManagedId, setSelectedManagedId] = useState<string | null>(null);
+  const [selectedExternal, setSelectedExternal] = useState<ManagedGroup | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<ManagedGroup[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
-  const [giftQuery, setGiftQuery] = useState("");
-  const [giftResults, setGiftResults] = useState<ManagedGroup[]>([]);
-  const [giftSelectedGroup, setGiftSelectedGroup] = useState<ManagedGroup | null>(null);
-  const [giftPlanId, setGiftPlanId] = useState<string | null>(null);
-  const [giftLoading, setGiftLoading] = useState(false);
-  const [giftProcessing, setGiftProcessing] = useState(false);
-  const [giftMessage, setGiftMessage] = useState("");
-
-  const loadOverview = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadOverview = async () => {
     try {
+      setLoading(true);
       const data = await fetchStarsOverview();
       setOverview(data);
-      setSuccessMessage("");
-      setGiftMessage("");
+      if (data.groups.length > 0) {
+        setSelectedManagedId((prev) => prev ?? data.groups[0].group.id);
+      }
+      setError(null);
     } catch (err) {
-      const normalized = err instanceof Error ? err : new Error(String(err));
-      setError(normalized);
+      setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     void loadOverview();
-  }, [loadOverview]);
+  }, []);
 
   useEffect(() => {
-    if (!overview) {
+    if (mode !== 'other') {
       return;
     }
-    if (!selectedPlanId && overview.plans.length > 0) {
-      setSelectedPlanId(overview.plans[0].id);
-    }
-  }, [overview, selectedPlanId]);
-
-  useEffect(() => {
-    if (!overview) {
+    if (searchQuery.trim().length < MIN_SEARCH_LENGTH) {
+      setSearchResults([]);
       return;
     }
-    if (!giftPlanId && overview.plans.length > 0) {
-      setGiftPlanId(overview.plans[0].id);
-    }
-  }, [overview, giftPlanId]);
-
-  useEffect(() => {
-    if (!overview) {
-      return;
-    }
-    if (overview.groups.length === 0) {
-      setSelectedGroupId(null);
-      return;
-    }
-    setSelectedGroupId((current) => {
-      if (current && overview.groups.some((item) => item.group.id === current)) {
-        return current;
-      }
-      if (focusGroupId && overview.groups.some((item) => item.group.id === focusGroupId)) {
-        return focusGroupId;
-      }
-      return overview.groups[0].group.id;
-    });
-  }, [overview, focusGroupId]);
-
-  useEffect(() => {
-    if (!giftQuery.trim()) {
-      setGiftResults([]);
-      setGiftLoading(false);
-      return;
-    }
-    setGiftLoading(true);
     let cancelled = false;
-    const handle = setTimeout(() => {
-      searchGroupsForStars(giftQuery)
-        .then((results) => {
-          if (!cancelled) {
-            setGiftResults(results);
-          }
-        })
-        .catch((err) => {
-          if (!cancelled) {
-            const message = err instanceof Error ? err.message : String(err);
-            setSnackbar(message);
-            setGiftResults([]);
-          }
-        })
-        .finally(() => {
-          if (!cancelled) {
-            setGiftLoading(false);
-          }
-        });
-    }, 400);
+    const run = async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchGroupsForStars(searchQuery);
+        if (!cancelled) {
+          setSearchResults(results);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('[stars] search failed', err);
+          setSearchResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setSearchLoading(false);
+        }
+      }
+    };
+    void run();
     return () => {
       cancelled = true;
-      clearTimeout(handle);
     };
-  }, [giftQuery]);
+  }, [mode, searchQuery]);
 
-  const selectedGroup = useMemo(
-    () => overview?.groups.find((item) => item.group.id === selectedGroupId) ?? null,
-    [overview, selectedGroupId],
-  );
-  const selectedPlan = useMemo(
-    () => overview?.plans.find((plan) => plan.id === selectedPlanId) ?? null,
-    [overview, selectedPlanId],
-  );
-  const giftPlan = useMemo(
-    () => overview?.plans.find((plan) => plan.id === giftPlanId) ?? null,
-    [overview, giftPlanId],
-  );
+  const plans = overview?.plans ?? [];
+
+  const selectedTarget: TargetSelection | null = useMemo(() => {
+    if (mode === 'my-groups') {
+      const status = overview?.groups.find((item) => item.group.id === selectedManagedId);
+      return status ? { kind: 'managed', status } : null;
+    }
+    if (mode === 'other') {
+      return selectedExternal ? { kind: 'external', group: selectedExternal } : null;
+    }
+    return null;
+  }, [mode, overview, selectedManagedId, selectedExternal]);
+
+  const selectedPlan = useMemo(() => findPlan(plans, selectedPlanId), [plans, selectedPlanId]);
+
+  const totalCost = selectedPlan?.price ?? 0;
   const balance = overview?.balance ?? 0;
+  const canSubmit = selectedTarget != null && selectedPlan != null && balance >= totalCost && !processing;
 
-  const insufficientBalance = useMemo(() => {
-    if (!overview || !selectedPlan) {
-      return false;
+  const handleSwitchMode = (next: TargetMode) => {
+    setMode(next);
+    setSelectedPlanId(null);
+    setSnackbar(null);
+    if (next !== 'other') {
+      setSelectedExternal(null);
     }
-    return overview.balance < selectedPlan.price;
-  }, [overview, selectedPlan]);
+  };
 
-  const insufficientGiftBalance = useMemo(() => {
-    if (!overview || !giftPlan) {
-      return false;
+  const handleSelectManaged = (groupId: string) => {
+    setSelectedManagedId(groupId);
+    setSnackbar(null);
+  };
+
+  const handleSelectExternal = (group: ManagedGroup) => {
+    setSelectedExternal(group);
+    setSnackbar(null);
+  };
+
+  const handleSubmit = async () => {
+    if (!overview || !selectedTarget || !selectedPlan) {
+      return;
     }
-    return overview.balance < giftPlan.price;
-  }, [overview, giftPlan]);
-
-  const handleSelectGroup = useCallback((groupId: string) => {
-    setSelectedGroupId(groupId);
-    setSuccessMessage("");
-  }, []);
-
-  const handleSelectPlan = useCallback((planId: string) => {
-    setSelectedPlanId(planId);
-    setSuccessMessage("");
-  }, []);
-
-  const handlePurchase = useCallback(async () => {
-    if (!overview || !selectedGroup || !selectedPlan) {
+    if (balance < selectedPlan.price) {
+      setSnackbar(TEXT.insufficient);
       return;
     }
     setProcessing(true);
-    setSuccessMessage("");
     try {
-      const result = await purchaseStarsForGroup(selectedGroup.group.id, selectedPlan.id);
-      setOverview((prev) => {
-        if (!prev) {
-          return prev;
-        }
-        const balanceValue = Math.max(0, prev.balance + result.balanceDelta);
-        const groups = prev.groups.map((item) => {
-          if (item.group.id !== result.groupId) {
-            return item;
+      if (selectedTarget.kind === 'managed') {
+        const result = await purchaseStarsForGroup(selectedTarget.status.group.id, selectedPlan.id);
+        setOverview((prev) => {
+          if (!prev) {
+            return prev;
           }
-          const updatedDays = Math.max(0, item.daysLeft + result.daysAdded);
-          const status = resolveStarsStatus(updatedDays);
-          return { ...item, daysLeft: updatedDays, status, expiresAt: result.expiresAt };
+          const groups = prev.groups.map((item) => {
+            if (item.group.id !== result.groupId) {
+              return item;
+            }
+            const daysLeft = Math.max(0, item.daysLeft + result.daysAdded);
+            const status: GroupStarsStatus['status'] = daysLeft <= 0 ? 'expired' : daysLeft <= 5 ? 'expiring' : 'active';
+            return { ...item, daysLeft, status, expiresAt: result.expiresAt };
+          });
+          return { ...prev, balance: Math.max(0, prev.balance + result.balanceDelta), groups };
         });
-        return { ...prev, balance: balanceValue, groups };
-      });
-      setSuccessMessage(TEXT.success.purchase(selectedGroup.group.title, selectedPlan.days));
-      setSnackbar(TEXT.success.purchaseSnackbar);
-      const nickname = username ? `@${username}` : TEXT.success.fallbackUser;
-      console.info(`[stars] DM to bot: ${nickname} extended ${selectedGroup.group.title} by ${selectedPlan.days} days.`);
+        console.info('[telemetry] stars_payment_success', { groupId: selectedTarget.status.group.id, planId: selectedPlan.id, gifted: false });
+        setSnackbar(TEXT.snackbarPurchase(selectedTarget.status.group.title, selectedPlan.days));
+      } else {
+        const result = await giftStarsToGroup(selectedTarget.group.id, selectedPlan.id);
+        setOverview((prev) => prev ? { ...prev, balance: Math.max(0, prev.balance + result.balanceDelta) } : prev);
+        console.info('[telemetry] stars_payment_success', { groupId: selectedTarget.group.id, planId: selectedPlan.id, gifted: true });
+        setSnackbar(TEXT.snackbarGift(selectedTarget.group.title, selectedPlan.days));
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setSnackbar(message);
     } finally {
       setProcessing(false);
     }
-  }, [overview, selectedGroup, selectedPlan, username]);
-
-  const handleSelectGiftPlan = useCallback((planId: string) => {
-    setGiftPlanId(planId);
-    setGiftMessage("");
-  }, []);
-
-  const handleGift = useCallback(async () => {
-    if (!overview || !giftSelectedGroup || !giftPlan) {
-      return;
-    }
-    setGiftProcessing(true);
-    setGiftMessage("");
-    try {
-      const result = await giftStarsToGroup(giftSelectedGroup.id, giftPlan.id);
-      setOverview((prev) => {
-        if (!prev) {
-          return prev;
-        }
-        const balanceValue = Math.max(0, prev.balance + result.balanceDelta);
-        const groups = prev.groups.map((item) => {
-          if (item.group.id !== result.groupId) {
-            return item;
-          }
-          const updatedDays = Math.max(0, item.daysLeft + result.daysAdded);
-          const status = resolveStarsStatus(updatedDays);
-          return { ...item, daysLeft: updatedDays, status, expiresAt: result.expiresAt };
-        });
-        return { ...prev, balance: balanceValue, groups };
-      });
-      setGiftMessage(TEXT.success.gift(giftSelectedGroup.title, giftPlan.days));
-      setSnackbar(TEXT.success.giftSnackbar);
-      const nickname = username ? `@${username}` : TEXT.success.fallbackUser;
-      console.info(`[stars] DM to bot: ${nickname} gifted ${giftPlan.days} days to ${giftSelectedGroup.title}.`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setSnackbar(message);
-    } finally {
-      setGiftProcessing(false);
-    }
-  }, [overview, giftSelectedGroup, giftPlan, username]);
-
-  const handleCloseSnackbar = useCallback(() => {
-    setSnackbar(null);
-  }, []);
+  };
 
   if (loading) {
     return (
-      <Page>
-        <div className={styles.page} dir="ltr">
-          <Placeholder header={TEXT.load.header} description={TEXT.load.description} />
-        </div>
-      </Page>
+      <div className={styles.page} dir='ltr'>
+        <Placeholder header={TEXT.loading} />
+      </div>
     );
   }
 
-  if (error) {
+  if (error || !overview) {
     return (
-      <Page>
-        <div className={styles.page} dir="ltr">
-          <Placeholder header={TEXT.error.header} description={error.message}>
-            <Button mode="filled" onClick={loadOverview}>
-              {TEXT.error.action}
-            </Button>
-          </Placeholder>
-        </div>
-      </Page>
+      <div className={styles.page} dir='ltr'>
+        <Placeholder header={TEXT.loadError} description={error?.message}>
+          <Button mode='filled' onClick={loadOverview}>{TEXT.retry}</Button>
+        </Placeholder>
+      </div>
     );
-  }
-
-  if (!overview) {
-    return null;
   }
 
   return (
-    <Page>
-      <div className={styles.page} dir="ltr">
-        <div className={styles.section}>
-          <Button mode="plain" size="s" onClick={() => navigate(-1)}>??????</Button>
+    <div className={styles.page} dir='ltr'>
+      <section className={styles.section}>
+        <Text weight='2' className={styles.stepTitle}>{TEXT.stepTarget}</Text>
+        <div className={styles.tabRow}>
+          <button
+            type='button'
+            className={`${styles.tabButton} ${mode === 'my-groups' ? styles.tabButtonActive : ''}`}
+            onClick={() => handleSwitchMode('my-groups')}
+          >
+            {TEXT.tabs.myGroups}
+          </button>
+          <button
+            type='button'
+            className={`${styles.tabButton} ${mode === 'other' ? styles.tabButtonActive : ''}`}
+            onClick={() => handleSwitchMode('other')}
+          >
+            {TEXT.tabs.other}
+          </button>
+          <button
+            type='button'
+            className={`${styles.tabButton} ${mode === 'giveaway' ? styles.tabButtonActive : ''}`}
+            onClick={() => handleSwitchMode('giveaway')}
+          >
+            {TEXT.tabs.giveaway}
+          </button>
         </div>
-        <section className={styles.section}>
-          <div className={styles.actionsRow}>
-            <Title level="3" className={styles.sectionTitle}>
-              {TEXT.overview.title}
-            </Title>
-            <Text className={styles.scrollHint}>{TEXT.overview.hint}</Text>
-          </div>
-          <div className={styles.groupsList}>
-            {overview.groups.length === 0 ? (
-              <Text className={styles.secondaryText}>{TEXT.overview.empty}</Text>
-            ) : (
-              overview.groups.map((item) => {
-                const active = item.group.id === selectedGroupId;
-                return (
-                  <div
-                    key={item.group.id}
-                    className={classNames(styles.groupCard, active && styles.groupCardActive)}
-                    onClick={() => handleSelectGroup(item.group.id)}
-                  >
-                    <div className={styles.groupHeader}>
-                      <Avatar
-                        size={40}
-                        src={item.group.photoUrl ?? undefined}
-                        acronym={item.group.photoUrl ? undefined : item.group.title.charAt(0)}
-                        alt={item.group.title}
-                      />
-                      <div className={styles.groupInfo}>
-                        <Text weight="2">{item.group.title}</Text>
-                        <Text className={styles.secondaryText}>
-                          {toPersianDigits(item.group.membersCount)} members
-                        </Text>
-                      </div>
-                    </div>
-                    <div className={styles.groupActions}>
-                      <span className={classNames(styles.badge, BADGE_CLASSES[item.status])}>
-                        {TEXT.badges[item.status]}
-                      </span>
-                      <Text className={styles.secondaryText}>{formatDaysRemaining(item.daysLeft)}</Text>
-                    </div>
-                    <Button
-                      mode="outline"
-                      size="s"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleSelectGroup(item.group.id);
-                      }}
-                    >
-                      {TEXT.overview.manageButton}
-                    </Button>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </section>
 
-        <section className={styles.section}>
-          <Title level="3" className={styles.sectionTitle}>
-            {TEXT.plans.title}
-          </Title>
-          <div className={styles.planGrid}>
-            {overview.plans.map((plan) => {
-              const selected = plan.id === selectedPlanId;
+        {mode === 'my-groups' && (
+          <div className={styles.groupGrid}>
+            {overview.groups.length === 0 && (
+              <div className={styles.emptyState}>{TEXT.myGroupsEmpty}</div>
+            )}
+            {overview.groups.map((item) => {
+              const active = item.group.id === selectedManagedId;
               return (
-                <div
-                  key={plan.id}
-                  className={classNames(styles.planCard, selected && styles.planCardSelected)}
-                  onClick={() => handleSelectPlan(plan.id)}
+                <button
+                  key={item.group.id}
+                  type='button'
+                  className={`${styles.groupCard} ${active ? styles.groupCardActive : ''}`}
+                  onClick={() => handleSelectManaged(item.group.id)}
                 >
-                  <Text weight="2" className={styles.planPrice}>
-                    {planPriceLabel(plan)}
-                  </Text>
-                  <Text className={styles.planDays}>{planDaysLabel(plan)}</Text>
-                </div>
+                  <Avatar
+                    size={48}
+                    src={item.group.photoUrl ?? undefined}
+                    acronym={item.group.photoUrl ? undefined : initialsFromTitle(item.group.title)}
+                    alt={item.group.title}
+                  />
+                  <div className={styles.groupMeta}>
+                    <span className={styles.groupName}>{item.group.title}</span>
+                    <span className={styles.groupMembers}>{formatNumber(item.group.membersCount)} members</span>
+                    <span className={`${styles.groupBadge} ${styles[`badge_${item.status}`]}`}>
+                      {TEXT.badge[item.status]}
+                    </span>
+                  </div>
+                  <span className={styles.groupDays}>{item.daysLeft} days left</span>
+                </button>
               );
             })}
           </div>
-        </section>
+        )}
 
-        <section className={styles.section}>
-          <Title level="3" className={styles.sectionTitle}>
-            {TEXT.purchase.title}
-          </Title>
-          <div className={styles.summaryGrid}>
-            <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>{TEXT.purchase.groupLabel}</span>
-              <span className={styles.summaryValue}>
-                {selectedGroup ? selectedGroup.group.title : TEXT.purchase.notSelected}
-              </span>
-            </div>
-            <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>{TEXT.purchase.planLabel}</span>
-              <span className={styles.summaryValue}>
-                {selectedPlan ? planDaysLabel(selectedPlan) : TEXT.purchase.notSelected}
-              </span>
-            </div>
-            <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>{TEXT.purchase.priceLabel}</span>
-              <span className={styles.summaryValue}>
-                {selectedPlan ? planPriceLabel(selectedPlan) : "--"}
-              </span>
-            </div>
-            <div className={styles.summaryCard}>
-              <span className={styles.summaryLabel}>{TEXT.purchase.balanceLabel}</span>
-              <span className={styles.summaryValue}>{formatNumber(balance)} stars</span>
-              {insufficientBalance && (
-                <Text className={styles.secondaryText}>{TEXT.purchase.insufficient}</Text>
-              )}
-            </div>
-          </div>
-          {successMessage && <Text>{successMessage}</Text>}
-          <div className={styles.summaryActions}>
-            <Button
-              mode="filled"
-              size="m"
-              stretched
-              disabled={processing || !selectedGroup || !selectedPlan || insufficientBalance}
-              onClick={handlePurchase}
-            >
-              {processing ? TEXT.purchase.processing : TEXT.purchase.button}
-            </Button>
-            <Button mode="plain" size="s" onClick={loadOverview} disabled={processing}>
-              {TEXT.purchase.refresh}
-            </Button>
-          </div>
-        </section>
-
-        <section className={styles.section}>
-          <Title level="3" className={styles.sectionTitle}>
-            {TEXT.gift.title}
-          </Title>
-          <div className={styles.giftSearch}>
+        {mode === 'other' && (
+          <div className={styles.otherTarget}>
             <Input
-              value={giftQuery}
-              onChange={(event) => setGiftQuery(event.target.value)}
-              placeholder={TEXT.gift.placeholder}
-              dir="ltr"
+              placeholder={TEXT.searchPlaceholder}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
             />
-            {giftLoading && <Text className={styles.secondaryText}>{TEXT.gift.searching}</Text>}
-            {!giftLoading && giftQuery && giftResults.length === 0 && (
-              <Text className={styles.secondaryText}>{TEXT.gift.noResults}</Text>
+            <Text weight='2' className={styles.searchHint}>
+              {TEXT.searchHint}
+            </Text>
+            {searchLoading && <Text className={styles.searchStatus}>Searching...</Text>}
+            {!searchLoading && searchQuery.trim().length >= MIN_SEARCH_LENGTH && searchResults.length === 0 && (
+              <div className={styles.emptyState}>{TEXT.searchEmpty}</div>
             )}
-            <div className={styles.searchResults}>
-              {giftResults.map((group) => {
-                const selected = giftSelectedGroup?.id === group.id;
+            <div className={styles.groupGrid}>
+              {searchResults.map((group) => {
+                const active = selectedExternal?.id === group.id;
                 return (
-                  <div
+                  <button
                     key={group.id}
-                    className={classNames(styles.searchResult, selected && styles.searchResultSelected)}
-                    onClick={() => {
-                      setGiftSelectedGroup(group);
-                      setGiftMessage("");
-                    }}
+                    type='button'
+                    className={`${styles.groupCard} ${active ? styles.groupCardActive : ''}`}
+                    onClick={() => handleSelectExternal(group)}
                   >
-                    <div className={styles.groupInfo}>
-                      <Text weight="2">{group.title}</Text>
-                      <Text className={styles.secondaryText}>
-                        {toPersianDigits(group.membersCount)} members
-                      </Text>
+                    <Avatar
+                      size={48}
+                      src={group.photoUrl ?? undefined}
+                      acronym={group.photoUrl ? undefined : initialsFromTitle(group.title)}
+                      alt={group.title}
+                    />
+                    <div className={styles.groupMeta}>
+                      <span className={styles.groupName}>{group.title}</span>
+                      <span className={styles.groupMembers}>{formatNumber(group.membersCount)} members</span>
                     </div>
-                    <Button
-                      mode="plain"
-                      size="s"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setGiftSelectedGroup(group);
-                        setGiftMessage("");
-                      }}
-                    >
-                      {TEXT.gift.select}
-                    </Button>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           </div>
-          <div className={styles.planGrid}>
-            {overview.plans.map((plan) => {
-              const selected = plan.id === giftPlanId;
-              return (
-                <div
-                  key={`gift-${plan.id}`}
-                  className={classNames(styles.planCard, selected && styles.planCardSelected)}
-                  onClick={() => handleSelectGiftPlan(plan.id)}
-                >
-                  <Text weight="2" className={styles.planPrice}>
-                    {planPriceLabel(plan)}
-                  </Text>
-                  <Text className={styles.planDays}>{planDaysLabel(plan)}</Text>
-                </div>
-              );
-            })}
-          </div>
-          {giftMessage && <Text>{giftMessage}</Text>}
-          <div className={styles.actionsRow}>
-            <Button
-              mode="filled"
-              size="m"
-              stretched
-              disabled={giftProcessing || !giftSelectedGroup || !giftPlan || insufficientGiftBalance}
-              onClick={handleGift}
-            >
-              {giftProcessing ? TEXT.gift.processing : TEXT.gift.button}
-            </Button>
-            {insufficientGiftBalance && (
-              <Text className={styles.secondaryText}>{TEXT.gift.insufficient}</Text>
-            )}
-          </div>
-        </section>
-
-        {snackbar && (
-          <Snackbar onClose={handleCloseSnackbar} duration={3500}>
-            {snackbar}
-          </Snackbar>
         )}
-      </div>
-    </Page>
+
+        {mode === 'giveaway' && (
+          <div className={styles.giveawayCard}>
+            <Text weight='2' className={styles.giveawayTitle}>{TEXT.giveawayTitle}</Text>
+            <Text className={styles.giveawayDescription}>{TEXT.giveawayDescription}</Text>
+            <Button
+              mode='filled'
+              size='m'
+              onClick={() => navigate('/giveaway/create')}
+            >
+              {TEXT.giveawayAction}
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {mode !== 'giveaway' && (
+        <>
+          <section className={styles.section}>
+            <Text weight='2' className={styles.stepTitle}>{TEXT.stepPlan}</Text>
+            <div className={styles.planGrid}>
+              {plans.map((plan) => {
+                const active = plan.id === selectedPlanId;
+                return (
+                  <button
+                    key={plan.id}
+                    type='button'
+                    className={`${styles.planCard} ${active ? styles.planCardActive : ''}`}
+                    onClick={() => setSelectedPlanId(plan.id)}
+                  >
+                    <span className={styles.planDays}>{plan.days} days</span>
+                    <span className={styles.planPrice}>{formatNumber(plan.price)} Stars</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className={styles.section}>
+            <Text weight='2' className={styles.stepTitle}>{TEXT.stepConfirm}</Text>
+            <div className={styles.summaryCard}>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryLabel}>{TEXT.summary.group}</span>
+                <span className={styles.summaryValue}>
+                  {selectedTarget
+                    ? selectedTarget.kind === 'managed'
+                      ? selectedTarget.status.group.title
+                      : selectedTarget.group.title
+                    : 'Not selected'}
+                </span>
+              </div>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryLabel}>{TEXT.summary.plan}</span>
+                <span className={styles.summaryValue}>{selectedPlan ? planLabel(selectedPlan) : 'Not selected'}</span>
+              </div>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryLabel}>{TEXT.summary.total}</span>
+                <span className={styles.summaryValue}>{selectedPlan ? `${formatNumber(selectedPlan.price)} Stars` : '-'}</span>
+              </div>
+            </div>
+            <Button
+              mode='filled'
+              size='l'
+              stretched
+              disabled={!canSubmit}
+              loading={processing}
+              onClick={handleSubmit}
+            >
+              {TEXT.pay}
+            </Button>
+            {selectedPlan && balance < totalCost && (
+              <Text className={styles.insufficient}>{TEXT.insufficient}</Text>
+            )}
+          </section>
+        </>
+      )}
+
+      {snackbar && (
+        <Snackbar onClose={() => setSnackbar(null)}>{snackbar}</Snackbar>
+      )}
+    </div>
   );
 }
+
+function initialsFromTitle(title: string): string {
+  const words = title.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return '?';
+  }
+  if (words.length === 1) {
+    return words[0].charAt(0).toUpperCase();
+  }
+  return `${words[0].charAt(0)}${words[1].charAt(0)}`.toUpperCase();
+}
+
+
+
+

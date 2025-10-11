@@ -1,4 +1,4 @@
-﻿import { Button, Text } from "@telegram-apps/telegram-ui";
+import { Button, Text } from "@telegram-apps/telegram-ui";
 
 import { classNames } from "@/css/classnames.ts";
 
@@ -20,14 +20,12 @@ type GroupMenuDrawerProps = {
 const MENU_ITEMS: MenuItem[] = [
   { key: "home", icon: "🏠", label: "Dashboard" },
   { key: "settings", icon: "⚙️", label: "General settings" },
-  { key: "bans", icon: "🚫", label: "Content restrictions" },
-  { key: "limits", icon: "📊", label: "Limits" },
+  { key: "bans", icon: "🛡️", label: "Content restrictions" },
+  { key: "limits", icon: "📏", label: "Limits" },
   { key: "mute", icon: "🔕", label: "Quiet hours" },
-  { key: "mandatory", icon: "✅", label: "Mandatory membership" },
-  { key: "texts", icon: "✉️", label: "Custom messages" },
-  { key: "analytics", icon: "📈", label: "Analytics" },
-  { key: "stars", icon: "⭐", label: "Stars top-up" },
-  { key: "giveaway", icon: "🎉", label: "Giveaways" },
+  { key: "mandatory", icon: "📌", label: "Mandatory membership" },
+  { key: "texts", icon: "💬", label: "Custom messages" },
+  { key: "analytics", icon: "📊", label: "Analytics" },
 ];
 
 export function GroupMenuDrawer({ open, onClose, activeKey = "home", onSelect }: GroupMenuDrawerProps) {
@@ -60,3 +58,4 @@ export function GroupMenuDrawer({ open, onClose, activeKey = "home", onSelect }:
     </div>
   );
 }
+

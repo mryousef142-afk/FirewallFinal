@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Avatar,
@@ -118,6 +118,7 @@ const TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     requiredAll: ["{channel_names}"],
   },
 ];
+
 
 
 const PREVIEW_DATA: Record<string, string> = {
@@ -407,9 +408,13 @@ const promoButtonError = useMemo(() => {
     <div className={styles.page} dir="ltr">
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <Button mode="plain" size="s" onClick={() => navigate(-1)}>
-            Back
-          </Button>
+          <IconButton
+            aria-label="Back"
+            onClick={() => navigate(-1)}
+            className={styles.backButton}
+          >
+            <span className={styles.backIcon} aria-hidden="true" />
+          </IconButton>
         </div>
         <div className={styles.headerCenter}>
           <Avatar
@@ -426,7 +431,7 @@ const promoButtonError = useMemo(() => {
           </div>
         </div>
         <div className={styles.headerRight}>
-          <IconButton aria-label="Open menu" onClick={() => setMenuOpen(true)}>
+          <IconButton aria-label="Open menu" onClick={() => setMenuOpen(true)} className={styles.menuButton}>
             <span className={styles.burger}>
               <span />
               <span />
