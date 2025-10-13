@@ -108,7 +108,7 @@ export function ProfilePage() {
     <div className={styles.page} dir="ltr">
       <section className={styles.heroCard}>
         <div className={styles.heroProfile}>
-          <Avatar size={62} src={avatarUrl ?? undefined} acronym={avatarUrl ? undefined : initials} alt={displayName ?? "Commander"} />
+          <Avatar size={96} src={avatarUrl ?? undefined} acronym={avatarUrl ? undefined : initials} alt={displayName ?? "Commander"} />
           <div className={styles.heroMeta}>
             <span className={styles.heroLabel}>{TEXT.tagline}</span>
             <h1 className={styles.heroName}>{displayName ?? "Firewall Commander"}</h1>
@@ -303,6 +303,5 @@ export function ProfilePage() {
     </div>
   );
 }
-
 
 

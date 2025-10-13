@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 *.pem
+bot/data/
+.data/
+backups/

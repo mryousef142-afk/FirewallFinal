@@ -499,7 +499,7 @@ ${dailyTaskChannel.channelLink}`,
       <section className={styles.hero}>
         <div className={styles.heroHeader}>
           <div className={styles.heroProfile}>
-            <Avatar size={64} acronym="CM" alt="Commander" />
+            <Avatar size={96} acronym="CM" alt="Commander" />
             <div className={styles.heroMeta}>
               <span className={styles.heroLabel}>{TEXT.title}</span>
               <Title level="2" className={styles.heroTitle}>

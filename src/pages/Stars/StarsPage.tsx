@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, Button, Input, Placeholder, Snackbar, Text } from '@telegram-apps/telegram-ui';
 
 import {
   fetchStarsOverview,
+  fetchStarsWalletSummary,
   giftStarsToGroup,
   purchaseStarsForGroup,
+  refundStarsTransaction,
   searchGroupsForStars,
 } from '@/features/dashboard/api.ts';
 import type {
@@ -13,8 +15,11 @@ import type {
   ManagedGroup,
   StarsPlan,
   StarsOverview,
+  StarsWalletSummary,
+  StarsTransactionEntry,
 } from '@/features/dashboard/types.ts';
 import { formatNumber } from '@/utils/format.ts';
+import { openTelegramInvoice, type InvoiceOutcome } from '@/utils/telegram.ts';
 
 import styles from './StarsPage.module.css';
 
@@ -48,7 +53,6 @@ const TEXT = {
     total: 'Total Stars',
   },
   pay: 'Pay with Stars',
-  insufficient: 'Not enough Stars',
   loading: 'Loading Stars overview...',
   loadError: 'Failed to load Stars data.',
   retry: 'Retry',
@@ -59,10 +63,49 @@ const TEXT = {
     expiring: 'Expiring soon',
     expired: 'Expired',
   },
+  wallet: {
+    title: 'Wallet & Activity',
+    balance: 'Available Stars',
+    spent: 'Stars spent',
+    refunded: 'Stars refunded',
+    pending: 'Pending payments',
+    empty: 'No payments recorded yet.',
+    refundAction: 'Refund',
+    refunding: 'Refunding...',
+  },
+  invoice: {
+    prompt: 'Complete the payment in Telegram to finish checkout.',
+    opening: 'Opening invoice in Telegram...',
+    paid: (group: string, days: number) => `Payment confirmed. ${group} extended by ${days} days.`,
+    cancelled: 'Payment cancelled in Telegram.',
+    failed: 'Payment failed. Please try again.',
+    external: 'Invoice opened in a new window. Confirm the payment when ready.',
+  },
+  refund: {
+    success: (target: string) => `Refund processed for ${target}.`,
+    error: 'Unable to refund this transaction. Please try again.',
+  },
+  transactionStatus: {
+    completed: 'Completed',
+    pending: 'Pending',
+    refunded: 'Refunded',
+  },
+  transactionGift: 'Gift',
+  transactionManaged: 'Managed',
+  transactionUnknownGroup: 'Unknown group',
+  invoiceExternalNotice: 'The invoice was opened outside Telegram. Return here after paying.',
 };
 
 function planLabel(plan: StarsPlan): string {
   return `${plan.days} days - ${formatNumber(plan.price)} Stars`;
+}
+
+function formatDateTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 }
 
 function findPlan(plans: StarsPlan[], planId: string | null): StarsPlan | null {
@@ -85,27 +128,63 @@ export function StarsPage() {
   const [searchResults, setSearchResults] = useState<ManagedGroup[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [refundProcessing, setRefundProcessing] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<string | null>(null);
 
-  const loadOverview = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchStarsOverview();
-      setOverview(data);
-      if (data.groups.length > 0) {
-        setSelectedManagedId((prev) => prev ?? data.groups[0].group.id);
+  const [wallet, setWallet] = useState<StarsWalletSummary | null>(null);
+
+  const loadData = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!options?.silent) {
+        setLoading(true);
       }
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const [overviewData, walletData] = await Promise.all([fetchStarsOverview(), fetchStarsWalletSummary()]);
+        setOverview(overviewData);
+        setWallet(walletData);
+        if (overviewData.groups.length > 0) {
+          setSelectedManagedId((prev) => prev ?? overviewData.groups[0].group.id);
+        }
+        setError(null);
+      } catch (err) {
+        if (options?.silent) {
+          setSnackbar(err instanceof Error ? err.message : String(err));
+        } else {
+          setError(err instanceof Error ? err : new Error(String(err)));
+        }
+      } finally {
+        if (!options?.silent) {
+          setLoading(false);
+        }
+      }
+    },
+    [setSnackbar],
+  );
+
+  const handleRefundTransaction = useCallback(
+    async (transaction: StarsTransactionEntry) => {
+      setRefundProcessing(transaction.id);
+      try {
+        const result = await refundStarsTransaction(transaction.id);
+        await processStarsResult(result, {
+          targetId: transaction.groupId,
+          targetTitle: transaction.groupTitle ?? TEXT.transactionUnknownGroup,
+          gifted: transaction.gifted,
+          planDays: transaction.planDays ?? 0,
+        });
+      } catch (err) {
+        console.error('[stars] refund failed', err);
+        setSnackbar(TEXT.refund.error);
+      } finally {
+        setRefundProcessing(null);
+      }
+    },
+    [processStarsResult, setSnackbar],
+  );
 
   useEffect(() => {
-    void loadOverview();
-  }, []);
+    void loadData();
+  }, [loadData, setSnackbar]);
 
   useEffect(() => {
     if (mode !== 'other') {
@@ -142,6 +221,64 @@ export function StarsPage() {
 
   const plans = overview?.plans ?? [];
 
+  const processStarsResult = useCallback(
+    async (
+      result: StarsPurchaseResult,
+      context: { targetId?: string | null; targetTitle: string; gifted: boolean; planDays: number },
+    ) => {
+      const targetLabel = context.targetTitle;
+      if (result.status === "completed") {
+        console.info("[telemetry] stars_payment_success", {
+          groupId: result.groupId ?? context.targetId ?? "unknown",
+          planId: result.planId,
+          gifted: context.gifted,
+        });
+        await loadData({ silent: true });
+        setSnackbar(
+          context.gifted
+            ? TEXT.snackbarGift(targetLabel, context.planDays)
+            : TEXT.snackbarPurchase(targetLabel, context.planDays),
+        );
+        return;
+      }
+
+      if (result.status === "pending") {
+        console.info("[telemetry] stars_payment_pending", {
+          groupId: result.groupId ?? context.targetId ?? "unknown",
+          planId: result.planId,
+          gifted: context.gifted,
+        });
+        if (result.paymentUrl) {
+          setSnackbar(TEXT.invoice.opening);
+          const outcome: InvoiceOutcome = await openTelegramInvoice(result.paymentUrl);
+          if (outcome === "paid") {
+            await loadData({ silent: true });
+            setSnackbar(TEXT.invoice.paid(targetLabel, context.planDays));
+          } else if (outcome === "cancelled") {
+            setSnackbar(TEXT.invoice.cancelled);
+          } else if (outcome === "failed") {
+            setSnackbar(TEXT.invoice.failed);
+          } else {
+            setSnackbar(TEXT.invoice.external);
+          }
+        } else {
+          window.open(result.message ?? "", "_blank", "noopener,noreferrer");
+          setSnackbar(TEXT.invoice.external);
+        }
+        return;
+      }
+
+      console.info("[telemetry] stars_payment_refunded", {
+        groupId: result.groupId ?? context.targetId ?? "unknown",
+        planId: result.planId,
+        gifted: context.gifted,
+      });
+      await loadData({ silent: true });
+      setSnackbar(TEXT.refund.success(targetLabel));
+    },
+    [loadData, setSnackbar],
+  );
+
   const selectedTarget: TargetSelection | null = useMemo(() => {
     if (mode === 'my-groups') {
       const status = overview?.groups.find((item) => item.group.id === selectedManagedId);
@@ -155,9 +292,7 @@ export function StarsPage() {
 
   const selectedPlan = useMemo(() => findPlan(plans, selectedPlanId), [plans, selectedPlanId]);
 
-  const totalCost = selectedPlan?.price ?? 0;
-  const balance = overview?.balance ?? 0;
-  const canSubmit = selectedTarget != null && selectedPlan != null && balance >= totalCost && !processing;
+  const canSubmit = selectedTarget != null && selectedPlan != null && !processing;
 
   const handleSwitchMode = (next: TargetMode) => {
     setMode(next);
@@ -182,36 +317,18 @@ export function StarsPage() {
     if (!overview || !selectedTarget || !selectedPlan) {
       return;
     }
-    if (balance < selectedPlan.price) {
-      setSnackbar(TEXT.insufficient);
-      return;
-    }
     setProcessing(true);
     try {
-      if (selectedTarget.kind === 'managed') {
-        const result = await purchaseStarsForGroup(selectedTarget.status.group.id, selectedPlan.id);
-        setOverview((prev) => {
-          if (!prev) {
-            return prev;
-          }
-          const groups = prev.groups.map((item) => {
-            if (item.group.id !== result.groupId) {
-              return item;
-            }
-            const daysLeft = Math.max(0, item.daysLeft + result.daysAdded);
-            const status: GroupStarsStatus['status'] = daysLeft <= 0 ? 'expired' : daysLeft <= 5 ? 'expiring' : 'active';
-            return { ...item, daysLeft, status, expiresAt: result.expiresAt };
-          });
-          return { ...prev, balance: Math.max(0, prev.balance + result.balanceDelta), groups };
-        });
-        console.info('[telemetry] stars_payment_success', { groupId: selectedTarget.status.group.id, planId: selectedPlan.id, gifted: false });
-        setSnackbar(TEXT.snackbarPurchase(selectedTarget.status.group.title, selectedPlan.days));
-      } else {
-        const result = await giftStarsToGroup(selectedTarget.group.id, selectedPlan.id);
-        setOverview((prev) => prev ? { ...prev, balance: Math.max(0, prev.balance + result.balanceDelta) } : prev);
-        console.info('[telemetry] stars_payment_success', { groupId: selectedTarget.group.id, planId: selectedPlan.id, gifted: true });
-        setSnackbar(TEXT.snackbarGift(selectedTarget.group.title, selectedPlan.days));
-      }
+      const result =
+        selectedTarget.kind === 'managed'
+          ? await purchaseStarsForGroup(selectedTarget.status.group.id, selectedPlan.id, selectedTarget.status.group)
+          : await giftStarsToGroup(selectedTarget.group, selectedPlan.id);
+      await processStarsResult(result, {
+        targetId: selectedTarget.kind === 'managed' ? selectedTarget.status.group.id : selectedTarget.group.id,
+        targetTitle: selectedTarget.kind === 'managed' ? selectedTarget.status.group.title : selectedTarget.group.title,
+        gifted: selectedTarget.kind !== 'managed',
+        planDays: selectedPlan.days,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setSnackbar(message);
@@ -232,7 +349,7 @@ export function StarsPage() {
     return (
       <div className={styles.page} dir='ltr'>
         <Placeholder header={TEXT.loadError} description={error?.message}>
-          <Button mode='filled' onClick={loadOverview}>{TEXT.retry}</Button>
+          <Button mode='filled' onClick={() => loadData()}>{TEXT.retry}</Button>
         </Placeholder>
       </div>
     );
@@ -356,6 +473,87 @@ export function StarsPage() {
         )}
       </section>
 
+      <section className={styles.section}>
+        <Text weight='2' className={styles.stepTitle}>{TEXT.wallet.title}</Text>
+        {wallet ? (
+          <>
+            <div className={styles.walletStats}>
+              <div className={styles.walletStat}>
+                <span className={styles.walletStatLabel}>{TEXT.wallet.balance}</span>
+                <span className={styles.walletStatValue}>
+                  {formatNumber(wallet.balance)} {wallet.currency.toUpperCase()}
+                </span>
+              </div>
+              <div className={styles.walletStat}>
+                <span className={styles.walletStatLabel}>{TEXT.wallet.spent}</span>
+                <span className={styles.walletStatValue}>
+                  {formatNumber(Math.abs(wallet.totalSpent))} {wallet.currency.toUpperCase()}
+                </span>
+              </div>
+              <div className={styles.walletStat}>
+                <span className={styles.walletStatLabel}>{TEXT.wallet.refunded}</span>
+                <span className={styles.walletStatValue}>
+                  {formatNumber(Math.abs(wallet.totalRefunded))} {wallet.currency.toUpperCase()}
+                </span>
+              </div>
+              <div className={styles.walletStat}>
+                <span className={styles.walletStatLabel}>{TEXT.wallet.pending}</span>
+                <span className={styles.walletStatValue}>{wallet.pendingCount}</span>
+              </div>
+            </div>
+            <div className={styles.transactionsList}>
+              {wallet.transactions.length === 0 ? (
+                <div className={styles.transactionsEmpty}>{TEXT.wallet.empty}</div>
+              ) : (
+                wallet.transactions.map((transaction) => {
+                  const amount = transaction.amount;
+                  const amountDisplay = `${amount >= 0 ? '+' : '-'}${formatNumber(Math.abs(amount))} ${wallet.currency.toUpperCase()}`;
+                  const timestamp = transaction.completedAt ?? transaction.createdAt;
+                  const statusLabel = TEXT.transactionStatus[transaction.status];
+                  const title = transaction.groupTitle ?? transaction.planLabel ?? TEXT.transactionUnknownGroup;
+                  const showRefundButton = transaction.status === 'completed' && transaction.direction === 'debit';
+                  return (
+                    <div key={transaction.id} className={styles.transactionCard}>
+                      <div className={styles.transactionHeader}>
+                        <span className={styles.transactionTitle}>{title}</span>
+                        <span className={`${styles.transactionStatus} ${styles[`transactionStatus_${transaction.status}`]}`}>
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <div className={styles.transactionMeta}>
+                        <span>
+                          {transaction.planLabel ?? planLabel({ id: transaction.planId ?? '', days: transaction.planDays ?? 0, price: transaction.planPrice ?? 0 })}
+                          {transaction.gifted ? ` - ${TEXT.transactionGift}` : ''}
+                        </span>
+                        <span>{formatDateTime(timestamp)}</span>
+                      </div>
+                      <div className={styles.transactionFooter}>
+                        <span className={`${styles.transactionAmount} ${amount >= 0 ? styles.transactionAmountCredit : styles.transactionAmountDebit}`}>
+                          {amountDisplay}
+                        </span>
+                        {showRefundButton && (
+                          <Button
+                            mode='outline'
+                            size='s'
+                            disabled={refundProcessing === transaction.id}
+                            loading={refundProcessing === transaction.id}
+                            onClick={() => void handleRefundTransaction(transaction)}
+                          >
+                            {refundProcessing === transaction.id ? TEXT.wallet.refunding : TEXT.wallet.refundAction}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </>
+        ) : (
+          <Text className={styles.transactionsEmpty}>{TEXT.wallet.empty}</Text>
+        )}
+      </section>
+
       {mode !== 'giveaway' && (
         <>
           <section className={styles.section}>
@@ -410,8 +608,8 @@ export function StarsPage() {
             >
               {TEXT.pay}
             </Button>
-            {selectedPlan && balance < totalCost && (
-              <Text className={styles.insufficient}>{TEXT.insufficient}</Text>
+            {selectedPlan && (
+              <Text className={styles.invoiceHint}>{TEXT.invoice.prompt}</Text>
             )}
           </section>
         </>

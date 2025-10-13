@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  telegramId  String   @unique
+  role        String
+  displayName String?
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  groups           Group[]           @relation("GroupOwners")
+  memberships      GroupAdmin[]
+  wallet           StarsWallet?
+  starTransactions StarTransaction[]
+
+  @@index([role])
+}
+
+model Group {
+  id             String   @id @default(uuid())
+  title          String
+  telegramChatId String   @unique
+  inviteLink     String?
+  language       String?
+  status         String
+  creditBalance  Decimal  @default(0)
+  ownerId        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  owner            User?             @relation("GroupOwners", fields: [ownerId], references: [id], onDelete: SetNull)
+  managers         GroupAdmin[]
+  firewallRules    FirewallRule[]
+  ruleAudits       RuleAudit[]
+  wallet           StarsWallet?
+  starTransactions StarTransaction[]
+  reports          Report[]
+  moderationActions ModerationAction[]
+  membershipEvents  MembershipEvent[]
+
+  @@index([ownerId])
+}
+
+model GroupAdmin {
+  id        String   @id @default(uuid())
+  groupId   String
+  userId    String
+  role      String // manager, viewer
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model FirewallRule {
+  id        String   @id @default(uuid())
+  groupId   String?
+  scope     String // group/global
+  type      String // Legacy matcher type (text/media/link etc.)
+  pattern   String? // Legacy pattern
+  action    String? // Legacy primary action (delete/mute/kick)
+  severity  Int      @default(1)
+  schedule  Json?
+  metadata  Json?
+  name               String   @default("")
+  description        String?
+  enabled            Boolean  @default(true)
+  priority           Int      @default(100)
+  matchAllConditions Boolean  @default(false)
+  conditions         Json?
+  actions            Json?
+  escalation         Json?
+  createdBy          String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group      Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  ruleAudits RuleAudit[]
+
+  @@index([groupId])
+}
+
+model RuleAudit {
+  id         String   @id @default(uuid())
+  groupId    String
+  ruleId     String?
+  offenderId String?
+  action     String
+  payload    Json?
+  createdAt  DateTime @default(now())
+
+  group Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  rule  FirewallRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+
+  @@index([groupId, createdAt])
+}
+
+model ModerationAction {
+  id        String   @id @default(uuid())
+  groupId   String
+  userId    String?
+  actorId   String?
+  action    String
+  severity  String?
+  reason    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+}
+
+model MembershipEvent {
+  id        String   @id @default(uuid())
+  groupId   String
+  userId    String
+  event     String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+}
+
+model StarsWallet {
+  id        String   @id @default(uuid())
+  groupId   String?  @unique
+  ownerId   String?  @unique
+  balance   Int      @default(0)
+  currency  String   @default("stars")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group        Group?            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  owner        User?             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  transactions StarTransaction[]
+}
+
+model StarTransaction {
+  id        String   @id @default(uuid())
+  walletId  String
+  groupId   String?
+  userId    String?
+  type      String // purchase/gift/refund
+  amount    Int
+  reference String?  @unique
+  metadata  Json?
+  createdAt DateTime @default(now())
+  status    String   @default("pending")
+  externalId String? @unique
+  completedAt DateTime?
+
+  wallet StarsWallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  group  Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  user   User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([walletId, createdAt])
+  @@index([status, createdAt])
+}
+
+model BotSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model PromoSlide {
+  id        String   @id @default(uuid())
+  title     String?
+  imageUrl  String
+  linkUrl   String?
+  position  Int      @default(0)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  groupId   String
+  type      String // e.g. daily_summary, anomaly
+  payload   Json
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+}
+
+model PanelBan {
+  id         String   @id @default(uuid())
+  telegramId String   @unique
+  reason     String?
+  createdAt  DateTime @default(now())
+  createdBy  String?
+
+  @@index([telegramId])
+}

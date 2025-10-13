@@ -300,12 +300,47 @@ export interface StarsOverview {
 }
 
 export interface StarsPurchaseResult {
-  groupId: string;
+  transactionId: string;
+  status: "pending" | "completed" | "refunded";
+  groupId: string | null;
   planId: string;
   daysAdded: number;
-  expiresAt: string;
+  expiresAt: string | null;
   balanceDelta: number;
   gifted: boolean;
+  paymentUrl?: string | null;
+  message?: string | null;
+}
+
+export type StarsTransactionStatus = "pending" | "completed" | "refunded";
+
+export type StarsTransactionDirection = "debit" | "credit";
+
+export interface StarsTransactionEntry {
+  id: string;
+  status: StarsTransactionStatus;
+  direction: StarsTransactionDirection;
+  amount: number;
+  planId: string | null;
+  planLabel: string | null;
+  planDays: number | null;
+  planPrice: number | null;
+  groupId: string | null;
+  groupTitle: string | null;
+  gifted: boolean;
+  createdAt: string;
+  completedAt: string | null;
+  externalId: string | null;
+  invoiceLink: string | null;
+}
+
+export interface StarsWalletSummary {
+  balance: number;
+  currency: string;
+  totalSpent: number;
+  totalRefunded: number;
+  pendingCount: number;
+  transactions: StarsTransactionEntry[];
 }
 
 export type GiveawayStatus = "scheduled" | "active" | "completed";

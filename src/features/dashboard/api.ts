@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   AutoWarningPenalty,
   BanRuleKey,
   BanRuleSetting,
@@ -26,6 +26,8 @@
   StarsPurchaseResult,
   StarsPlan,
   GroupStarsStatus,
+  StarsWalletSummary,
+  StarsTransactionEntry,
   GiveawayConfig,
   GiveawayCreationPayload,
   GiveawayCreationResult,
@@ -38,6 +40,7 @@
 } from "./types.ts";
 import { BAN_RULE_KEYS } from "./types.ts";
 import { dashboardConfig } from "@/config/dashboard.ts";
+import { getTelegramInitData } from "@/utils/telegram";
 
 const DAY_MS = 86_400_000;
 
@@ -58,6 +61,58 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+const apiBaseUrl = (() => {
+  const value = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+  if (!value) {
+    return null;
+  }
+  return value.endsWith("/") ? value.slice(0, -1) : value;
+})();
+
+async function requestApi<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!apiBaseUrl) {
+    throw new Error("API base URL is not configured");
+  }
+
+  const headers = new Headers(init?.headers as HeadersInit | undefined);
+  if (!headers.has("Content-Type") && !(init?.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const initData = getTelegramInitData();
+  if (initData && !headers.has("X-Telegram-Init-Data")) {
+    headers.set("X-Telegram-Init-Data", initData);
+  }
+
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    ...init,
+    headers,
+  });
+  if (!response.ok) {
+    let message: string | undefined;
+    try {
+      const body = await response.json();
+      if (body && typeof body.error === "string") {
+        message = body.error;
+      }
+    } catch {
+      // ignore parse errors
+    }
+    if (!message) {
+      try {
+        message = await response.text();
+      } catch {
+        // ignore read errors
+      }
+    }
+    throw new Error(message && message.length > 0 ? message : `Request failed with status ${response.status}`);
+  }
+  if (response.status === 204) {
+    return undefined as T;
+  }
+  return (await response.json()) as T;
 }
 
 function hashString(value: string): number {
@@ -723,46 +778,130 @@ function resolveStarsPlan(planId: string): StarsPlan {
   return plan;
 }
 
-export async function fetchStarsOverview(): Promise<StarsOverview> {
+function createStarsPurchaseResult(
+  groupId: string,
+  planId: string,
+  gifted: boolean,
+  status: "pending" | "completed" | "refunded" = "completed",
+): StarsPurchaseResult {
+  const normalizedPlanId = planId.trim();
+  const plan = resolveStarsPlan(normalizedPlanId);
+  const completed = status === "completed";
+  const refunded = status === "refunded";
+  const expiresAt = completed ? new Date(Date.now() + plan.days * DAY_MS).toISOString() : null;
+  const balanceDelta = completed ? -plan.price : refunded ? plan.price : 0;
+  return {
+    transactionId: `mock-${Date.now()}`,
+    status,
+    groupId,
+    planId: normalizedPlanId,
+    daysAdded: completed ? plan.days : 0,
+    expiresAt,
+    balanceDelta,
+    gifted,
+    paymentUrl: completed || refunded ? null : "https://t.me/mock-payment",
+    message: completed ? null : refunded ? "Transaction refunded." : "Awaiting payment confirmation.",
+  };
+}
+async function mockFetchStarsOverview(): Promise<StarsOverview> {
   await delay(dashboardConfig.mockDelayMs);
   return createStarsOverview();
 }
 
-export async function purchaseStarsForGroup(
-  groupId: string,
-  planId: string,
-): Promise<StarsPurchaseResult> {
+async function mockPurchaseStarsForGroup(groupId: string, planId: string): Promise<StarsPurchaseResult> {
   await delay(dashboardConfig.mockDelayMs);
-  const plan = resolveStarsPlan(planId);
-  const expiresAt = new Date(Date.now() + plan.days * DAY_MS).toISOString();
+  return createStarsPurchaseResult(groupId, planId, false);
+}
+
+async function mockGiftStarsToGroup(groupId: string, planId: string): Promise<StarsPurchaseResult> {
+  await delay(dashboardConfig.mockDelayMs);
+  return createStarsPurchaseResult(groupId, planId, true);
+}
+
+async function mockFetchStarsWalletSummary(): Promise<StarsWalletSummary> {
+  await delay(dashboardConfig.mockDelayMs);
+  const now = Date.now();
+  const transactions: StarsTransactionEntry[] = [
+    {
+      id: `txn-${now - 1}`,
+      status: "completed",
+      direction: "debit",
+      amount: -500,
+      planId: "stars-30",
+      planLabel: "30 days - 500 Stars",
+      planDays: 30,
+      planPrice: 500,
+      groupId: "grp-alpha",
+      groupTitle: "Alpha Guardians",
+      gifted: false,
+      createdAt: new Date(now - DAY_MS * 2).toISOString(),
+      completedAt: new Date(now - DAY_MS * 2 + 300_000).toISOString(),
+      externalId: null,
+      invoiceLink: null,
+    },
+    {
+      id: `txn-${now - 2}`,
+      status: "refunded",
+      direction: "credit",
+      amount: 500,
+      planId: "stars-30",
+      planLabel: "30 days - 500 Stars",
+      planDays: 30,
+      planPrice: 500,
+      groupId: "grp-beta",
+      groupTitle: "Beta Keepers",
+      gifted: true,
+      createdAt: new Date(now - DAY_MS * 3).toISOString(),
+      completedAt: new Date(now - DAY_MS * 3 + 600_000).toISOString(),
+      externalId: null,
+      invoiceLink: null,
+    },
+    {
+      id: `txn-${now}`,
+      status: "pending",
+      direction: "debit",
+      amount: -900,
+      planId: "stars-60",
+      planLabel: "60 days - 900 Stars",
+      planDays: 60,
+      planPrice: 900,
+      groupId: "grp-gamma",
+      groupTitle: "Gamma Patrol",
+      gifted: false,
+      createdAt: new Date(now - 600_000).toISOString(),
+      completedAt: null,
+      externalId: null,
+      invoiceLink: "https://t.me/mock-payment",
+    },
+  ];
+
   return {
-    groupId,
-    planId,
-    daysAdded: plan.days,
-    expiresAt,
-    balanceDelta: -plan.price,
+    balance: 2400,
+    currency: "stars",
+    totalSpent: 500,
+    totalRefunded: 500,
+    pendingCount: 1,
+    transactions,
+  };
+}
+
+async function mockRefundStarsTransaction(transactionId: string): Promise<StarsPurchaseResult> {
+  await delay(dashboardConfig.mockDelayMs);
+  return {
+    transactionId,
+    status: "refunded",
+    groupId: "grp-alpha",
+    planId: "stars-30",
+    daysAdded: 0,
+    expiresAt: null,
+    balanceDelta: 500,
     gifted: false,
+    paymentUrl: null,
+    message: "Transaction refunded.",
   };
 }
 
-export async function giftStarsToGroup(
-  groupId: string,
-  planId: string,
-): Promise<StarsPurchaseResult> {
-  await delay(dashboardConfig.mockDelayMs);
-  const plan = resolveStarsPlan(planId);
-  const expiresAt = new Date(Date.now() + plan.days * DAY_MS).toISOString();
-  return {
-    groupId,
-    planId,
-    daysAdded: plan.days,
-    expiresAt,
-    balanceDelta: -plan.price,
-    gifted: true,
-  };
-}
-
-export async function searchGroupsForStars(query: string): Promise<ManagedGroup[]> {
+async function mockSearchGroupsForStars(query: string): Promise<ManagedGroup[]> {
   await delay(dashboardConfig.mockDelayMs);
   const normalized = normalizeSearchText(query);
   const identifier = normalizeSearchIdentifier(query);
@@ -788,6 +927,95 @@ export async function searchGroupsForStars(query: string): Promise<ManagedGroup[
       return matchesTitle || matchesId || matchesIdFallback || matchesInvite || matchesInviteIdentifier;
     })
     .slice(0, 6);
+}
+
+export async function fetchStarsOverview(): Promise<StarsOverview> {
+  if (!apiBaseUrl) {
+    return mockFetchStarsOverview();
+  }
+  return requestApi<StarsOverview>("/stars/overview", { method: "GET" });
+}
+
+export async function purchaseStarsForGroup(
+  groupId: string,
+  planId: string,
+  metadata?: Partial<ManagedGroup>,
+): Promise<StarsPurchaseResult> {
+  if (!apiBaseUrl) {
+    return mockPurchaseStarsForGroup(groupId, planId);
+  }
+  return requestApi<StarsPurchaseResult>("/stars/purchase", {
+    method: "POST",
+    body: JSON.stringify({
+      groupId: groupId.trim(),
+      planId: planId.trim(),
+      metadata: {
+        title: metadata?.title,
+        membersCount: metadata?.membersCount,
+        inviteLink: metadata?.inviteLink,
+        photoUrl: metadata?.photoUrl,
+        managed: true,
+      },
+    }),
+  });
+}
+
+export async function giftStarsToGroup(
+  group: ManagedGroup,
+  planId: string,
+): Promise<StarsPurchaseResult> {
+  if (!apiBaseUrl) {
+    return mockGiftStarsToGroup(group.id, planId);
+  }
+  return requestApi<StarsPurchaseResult>("/stars/gift", {
+    method: "POST",
+    body: JSON.stringify({
+      planId: planId.trim(),
+      group: {
+        id: group.id,
+        title: group.title,
+        membersCount: group.membersCount,
+        photoUrl: group.photoUrl,
+        inviteLink: group.inviteLink,
+        canManage: group.canManage,
+      },
+    }),
+  });
+}
+
+export async function searchGroupsForStars(query: string): Promise<ManagedGroup[]> {
+  if (!apiBaseUrl) {
+    return mockSearchGroupsForStars(query);
+  }
+  const qs = new URLSearchParams();
+  if (query.trim().length > 0) {
+    qs.set("q", query.trim());
+  }
+  const path = qs.toString().length > 0 ? `/stars/search?${qs.toString()}` : "/stars/search";
+  return requestApi<ManagedGroup[]>(path, { method: "GET" });
+}
+
+export async function fetchStarsWalletSummary(limit = 50): Promise<StarsWalletSummary> {
+  if (!apiBaseUrl) {
+    return mockFetchStarsWalletSummary();
+  }
+  const normalizedLimit = Number.isFinite(limit) ? Math.min(Math.max(Math.trunc(limit), 1), 100) : 50;
+  const qs = new URLSearchParams();
+  qs.set("limit", normalizedLimit.toString());
+  const path = `/stars/wallet?${qs.toString()}`;
+  return requestApi<StarsWalletSummary>(path, { method: "GET" });
+}
+
+export async function refundStarsTransaction(transactionId: string, reason?: string): Promise<StarsPurchaseResult> {
+  if (!apiBaseUrl) {
+    return mockRefundStarsTransaction(transactionId);
+  }
+  return requestApi<StarsPurchaseResult>(`/stars/transactions/${transactionId}/refund`, {
+    method: "POST",
+    body: JSON.stringify({
+      reason: reason && reason.trim().length > 0 ? reason.trim() : undefined,
+    }),
+  });
 }
 
 function normalizeSearchText(value: string): string {
@@ -1065,6 +1293,10 @@ export async function joinGiveaway(id: string): Promise<GiveawayDetail> {
   giveawayRecords = records;
   return buildGiveawayDetail(records[index], true);
 }
+
+
+
+
 
 
 

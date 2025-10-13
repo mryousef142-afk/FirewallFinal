@@ -48,7 +48,8 @@ try {
         </StrictMode>,
       );
     });
-} catch (e) {
+} catch (error) {
+  console.error('[app] Failed to initialize Telegram SDK:', error);
   root.render(<EnvUnsupported/>);
 }
 
