@@ -56,8 +56,19 @@
 
   --app-shadow-ambient: 0 18px 48px rgba(5, 12, 28, 0.32), 0 4px 18px rgba(0, 0, 0, 0.35);
   --app-shadow-raised: 0 24px 60px rgba(2, 11, 24, 0.45);
+  --app-shadow-glass: 
+    0 12px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(30, 162, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --app-shadow-neon: 
+    0 0 20px rgba(30, 162, 255, 0.5),
+    0 0 40px rgba(30, 162, 255, 0.3),
+    0 0 60px rgba(30, 162, 255, 0.2);
   --app-glow-cyan: 0 0 18px rgba(30, 162, 255, 0.45);
   --app-glow-gold: 0 0 20px rgba(250, 204, 67, 0.4);
+  --app-glow-green: 0 0 22px rgba(65, 214, 94, 0.45);
+  --app-glow-red: 0 0 20px rgba(255, 92, 92, 0.45);
+  --app-glow-purple: 0 0 25px rgba(132, 94, 247, 0.5);
 
   --app-spacing-2xs: 4px;
   --app-spacing-xs: 8px;
