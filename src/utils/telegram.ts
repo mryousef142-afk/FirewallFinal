@@ -54,9 +54,11 @@ export async function openTelegramInvoice(invoiceLink: string): Promise<InvoiceO
     return 'external';
   }
 
+  const openInvoiceFn = webApp.openInvoice as (link: string, callback?: (status: string) => void) => unknown;
+
   return new Promise<InvoiceOutcome>((resolve) => {
     try {
-      const maybePromise = webApp.openInvoice(invoiceLink, (status: string) => {
+      const maybePromise = openInvoiceFn.call(webApp, invoiceLink, (status: string) => {
         if (status === 'paid' || status === 'cancelled' || status === 'failed') {
           resolve(status);
         } else {

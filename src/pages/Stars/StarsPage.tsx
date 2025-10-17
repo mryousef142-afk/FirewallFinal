@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Avatar, Button, Input, Placeholder, Snackbar, Text } from '@telegram-apps/telegram-ui';
 
 import {
@@ -17,6 +17,7 @@ import type {
   StarsOverview,
   StarsWalletSummary,
   StarsTransactionEntry,
+  StarsPurchaseResult,
 } from '@/features/dashboard/types.ts';
 import { formatNumber } from '@/utils/format.ts';
 import { openTelegramInvoice, type InvoiceOutcome } from '@/utils/telegram.ts';
@@ -117,10 +118,14 @@ function findPlan(plans: StarsPlan[], planId: string | null): StarsPlan | null {
 
 export function StarsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const focusGroupIdFromState =
+    (location.state as { focusGroupId?: string } | null | undefined)?.focusGroupId ?? null;
+
   const [overview, setOverview] = useState<StarsOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [mode, setMode] = useState<TargetMode>('my-groups');
+  const [mode, setMode] = useState<TargetMode>(() => (focusGroupIdFromState ? 'my-groups' : 'other'));
   const [selectedManagedId, setSelectedManagedId] = useState<string | null>(null);
   const [selectedExternal, setSelectedExternal] = useState<ManagedGroup | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -160,66 +165,6 @@ export function StarsPage() {
     },
     [setSnackbar],
   );
-
-  const handleRefundTransaction = useCallback(
-    async (transaction: StarsTransactionEntry) => {
-      setRefundProcessing(transaction.id);
-      try {
-        const result = await refundStarsTransaction(transaction.id);
-        await processStarsResult(result, {
-          targetId: transaction.groupId,
-          targetTitle: transaction.groupTitle ?? TEXT.transactionUnknownGroup,
-          gifted: transaction.gifted,
-          planDays: transaction.planDays ?? 0,
-        });
-      } catch (err) {
-        console.error('[stars] refund failed', err);
-        setSnackbar(TEXT.refund.error);
-      } finally {
-        setRefundProcessing(null);
-      }
-    },
-    [processStarsResult, setSnackbar],
-  );
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData, setSnackbar]);
-
-  useEffect(() => {
-    if (mode !== 'other') {
-      return;
-    }
-    if (searchQuery.trim().length < MIN_SEARCH_LENGTH) {
-      setSearchResults([]);
-      return;
-    }
-    let cancelled = false;
-    const run = async () => {
-      setSearchLoading(true);
-      try {
-        const results = await searchGroupsForStars(searchQuery);
-        if (!cancelled) {
-          setSearchResults(results);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          console.error('[stars] search failed', err);
-          setSearchResults([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setSearchLoading(false);
-        }
-      }
-    };
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [mode, searchQuery]);
-
-  const plans = overview?.plans ?? [];
 
   const processStarsResult = useCallback(
     async (
@@ -278,6 +223,75 @@ export function StarsPage() {
     },
     [loadData, setSnackbar],
   );
+
+  const handleRefundTransaction = useCallback(
+    async (transaction: StarsTransactionEntry) => {
+      setRefundProcessing(transaction.id);
+      try {
+        const result = await refundStarsTransaction(transaction.id);
+        await processStarsResult(result, {
+          targetId: transaction.groupId,
+          targetTitle: transaction.groupTitle ?? TEXT.transactionUnknownGroup,
+          gifted: transaction.gifted,
+          planDays: transaction.planDays ?? 0,
+        });
+      } catch (err) {
+        console.error('[stars] refund failed', err);
+        setSnackbar(TEXT.refund.error);
+      } finally {
+        setRefundProcessing(null);
+      }
+    },
+    [processStarsResult, setSnackbar],
+  );
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    if (focusGroupIdFromState) {
+      setMode('my-groups');
+      setSelectedManagedId(focusGroupIdFromState);
+    } else {
+      setMode('other');
+    }
+  }, [focusGroupIdFromState]);
+
+  useEffect(() => {
+    if (mode !== 'other') {
+      return;
+    }
+    if (searchQuery.trim().length < MIN_SEARCH_LENGTH) {
+      setSearchResults([]);
+      return;
+    }
+    let cancelled = false;
+    const run = async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchGroupsForStars(searchQuery);
+        if (!cancelled) {
+          setSearchResults(results);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('[stars] search failed', err);
+          setSearchResults([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setSearchLoading(false);
+        }
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, searchQuery]);
+
+  const plans = overview?.plans ?? [];
 
   const selectedTarget: TargetSelection | null = useMemo(() => {
     if (mode === 'my-groups') {
