@@ -4,7 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "outDir": "dist/bot",
-    "rootDir": "bot",
+    "rootDir": ".",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "types": [
@@ -14,6 +14,8 @@
     "noEmitOnError": true
   },
   "include": [
-    "bot/**/*.ts"
+    "bot/**/*.ts",
+    "server/**/*.ts",
+    "shared/**/*.ts"
   ]
 }
