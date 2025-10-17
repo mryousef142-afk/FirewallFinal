@@ -10,10 +10,20 @@
 .hero {
   position: relative;
   overflow: hidden;
-  border-radius: var(--app-radius-xl);
-  background: linear-gradient(140deg, rgba(30, 162, 255, 0.32), rgba(74, 222, 128, 0.18));
-  box-shadow: var(--app-shadow-ambient);
-  padding: 24px;
+  border-radius: 28px;
+  background: linear-gradient(140deg, 
+    rgba(30, 162, 255, 0.4) 0%, 
+    rgba(59, 130, 246, 0.25) 30%,
+    rgba(74, 222, 128, 0.2) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(30, 162, 255, 0.3);
+  box-shadow: 
+    0 20px 60px rgba(30, 162, 255, 0.3),
+    0 0 80px rgba(74, 222, 128, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  padding: 28px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -23,9 +33,14 @@
   content: "";
   position: absolute;
   inset: -40%;
-  background: radial-gradient(circle at center, rgba(30, 162, 255, 0.45), transparent 55%);
-  opacity: 0.25;
+  background: radial-gradient(circle at center, 
+    rgba(30, 162, 255, 0.6) 0%,
+    rgba(74, 222, 128, 0.3) 40%,
+    transparent 70%
+  );
+  opacity: 0.4;
   pointer-events: none;
+  animation: float 6s ease-in-out infinite;
 }
 
 .heroHeader {
