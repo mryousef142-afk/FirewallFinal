@@ -377,13 +377,58 @@
 }
 
 .groupCard {
-  background: radial-gradient(circle at top left, rgba(30, 162, 255, 0.08) 0%, rgba(13, 20, 36, 0.85) 65%, rgba(8, 12, 22, 0.95) 100%);
-  border-radius: var(--app-radius-md);
+  background: linear-gradient(135deg, 
+    rgba(30, 162, 255, 0.12) 0%,
+    rgba(59, 130, 246, 0.08) 30%,
+    rgba(13, 20, 36, 0.95) 70%,
+    rgba(8, 12, 22, 0.98) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(30, 162, 255, 0.15);
+  border-radius: 24px;
   padding: var(--app-spacing-md);
   display: flex;
   flex-direction: column;
   gap: var(--app-spacing-sm);
-  box-shadow: var(--app-shadow-ambient);
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(30, 162, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.groupCard::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(30, 162, 255, 0.1) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.groupCard:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(30, 162, 255, 0.4);
+  box-shadow: 
+    0 20px 60px rgba(30, 162, 255, 0.3),
+    0 0 40px rgba(30, 162, 255, 0.2),
+    0 0 0 1px rgba(30, 162, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.groupCard:hover::after {
+  opacity: 1;
 }
 
 .groupHeader {
