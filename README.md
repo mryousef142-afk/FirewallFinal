@@ -1,4 +1,100 @@
-# Firewall Bot & Mini App Demo
+# 🔥 Telegram Firewall Bot & Mini App
+
+A powerful Telegram bot with advanced group moderation, firewall rules, and a beautiful Mini App dashboard.
+
+[![Production Ready](https://img.shields.io/badge/Production-Ready-green.svg)](DEPLOYMENT.md)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://reactjs.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+## ✨ ویژگی‌ها
+
+- 🤖 **Telegram Bot** با قابلیت‌های پیشرفته مدیریت گروه
+- 🔥 **Firewall System** برای مدیریت خودکار محتوا
+- 📱 **Mini App Dashboard** با رابط کاربری زیبا
+- ⭐ **Telegram Stars Payment** برای پرداخت درون‌برنامه‌ای
+- 📊 **Analytics Dashboard** برای تحلیل فعالیت گروه
+- 🎁 **Giveaway System** برای برگزاری قرعه‌کشی
+- 🎯 **Mission System** با سیستم XP و Referral
+- 👥 **Member Management** برای مدیریت اعضا
+- 🗄️ **PostgreSQL Database** با Prisma ORM
+- ☁️ **Cloudflare Worker** برای deployment
+
+## 📋 پیش‌نیازها
+
+- Node.js 18+ و npm/yarn
+- PostgreSQL 16+
+- حساب Cloudflare (برای deployment)
+- Telegram Bot Token ([دریافت از BotFather](https://t.me/BotFather))
+
+## 🚀 شروع سریع
+
+### 1. نصب
+
+```bash
+# کلون کردن پروژه
+git clone <your-repo-url>
+cd telegram-firewall-bot
+
+# نصب dependencies
+npm install
+```
+
+### 2. پیکربندی
+
+```bash
+# ایجاد فایل .env
+cp .env.example .env
+
+# ویرایش .env و پر کردن مقادیر
+nano .env
+```
+
+### 3. راه‌اندازی دیتابیس
+
+```bash
+# Generate Prisma Client
+npx prisma generate
+
+# اجرای migrations
+npm run migrate:deploy
+```
+
+### 4. اجرا (Development)
+
+```bash
+# اجرای Mini App
+npm run dev
+
+# اجرای Bot (terminal دیگر)
+npm run bot
+```
+
+### 5. Build و Deploy
+
+```bash
+# Build Mini App
+npm run build
+
+# Deploy به Cloudflare Workers
+npm run worker:deploy
+```
+
+## 📚 مستندات
+
+- [📖 راهنمای کامل Deployment](DEPLOYMENT.md)
+- [✅ Checklist آماده‌سازی Production](PRODUCTION_CHECKLIST.md)
+- [🏗️ معماری پروژه](docs/firewall-design.md)
+- [💳 راهنمای Telegram Stars Payment](docs/stars-payments.md)
+- [🗄️ یادداشت‌های Database](docs/database-notes.md)
+
+## 🛠️ تکنولوژی‌ها
+
+- **Frontend**: React 18, TypeScript, Telegram UI, TailwindCSS
+- **Backend**: Node.js, Express, Telegraf
+- **Database**: PostgreSQL, Prisma ORM
+- **Deployment**: Cloudflare Workers
+- **Build Tools**: Vite, TypeScript, ESLint
 
 This project demonstrates the firewall bot (FW-01) and accompanying Telegram Mini App dashboards (FW-02+).
 
