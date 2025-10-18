@@ -308,40 +308,69 @@ https://firewall-bot-backend.onrender.com/healthz
 
 ---
 
-## 🔄 مرحله 7: اجرای Database Migrations
+## 🔄 مرحله 7: بررسی Database Migrations
 
-### گام 7.1: نصب Node.js (اگر ندارید)
-1. به آدرس بروید: https://nodejs.org
-2. نسخه LTS را دانلود کنید
-3. نصب کنید
+**⚠️ خبر خوب:** اگر در Build Command مرحله 6.3 دقیقاً همان دستور را وارد کرده باشید، migrations خودکار اجرا شده است!
 
-### گام 7.2: Clone کردن Repository
-1. Terminal یا Command Prompt را باز کنید
-2. دستورات زیر را اجرا کنید:
+### گام 7.1: بررسی Logs
+
+برای اطمینان از اینکه migrations اجرا شده:
+
+1. در صفحه Web Service، به تب **"Logs"** بروید
+2. دنبال این خطوط باشید:
+
+```
+Running migrations...
+Prisma Migrate applied the following migrations:
+  ✓ 20240101000000_init
+  ✓ 20240102000000_add_tables
+```
+
+3. اگر این خطوط را دیدید ✅ **همه چیز درست است!**
+
+### گام 7.2: در صورت خطا (اختیاری)
+
+اگر خطای "table does not exist" دیدید:
+
+**راه حل 1: از Render Shell استفاده کنید**
+
+1. در صفحه Web Service، به تب **"Shell"** بروید
+2. روی **"New Shell Session"** کلیک کنید
+3. این دستورات را اجرا کنید:
 
 ```bash
-# Clone کردن
+npm run migrate:deploy
+npx prisma generate
+```
+
+**راه حل 2: از کامپیوتر خودتان**
+
+1. Terminal یا Command Prompt را باز کنید
+2. این دستورات را اجرا کنید:
+
+```bash
+# Clone کردن repository (اگر قبلاً نکرده‌اید)
 git clone https://github.com/[username]/[repo-name].git
 cd [repo-name]
 
 # نصب dependencies
 npm install
 
-# تنظیم DATABASE_URL
+# تنظیم DATABASE_URL از محیط
 # در ویندوز:
-set DATABASE_URL=postgresql://...
+set DATABASE_URL=postgresql://firewall_user:password@dpg-xxx.render.com/firewall_bot
 
 # در Mac/Linux:
-export DATABASE_URL=postgresql://...
+export DATABASE_URL=postgresql://firewall_user:password@dpg-xxx.render.com/firewall_bot
 
 # اجرای migrations
-npx prisma migrate deploy
+npm run migrate:deploy
 
 # Generate Prisma Client
 npx prisma generate
 ```
 
-**✅ Database شما آماده شد!**
+**✅ Database شما آماده است!**
 
 ---
 
