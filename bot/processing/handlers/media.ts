@@ -1,7 +1,7 @@
 import type { UpdateHandler } from "../types.js";
 import type { GroupChatContext, ProcessingAction } from "../types.js";
 import { ensureActions, isGroupChat } from "../utils.js";
-import { logger } from "../../server/utils/logger.js";
+import { logger } from "../../../server/utils/logger.js";
 import { runFirewall } from "../firewallEngine.js";
 
 const MAX_MEDIA_SIZE_MB = Number.parseInt(process.env.MEDIA_MAX_SIZE_MB ?? "15", 10);
