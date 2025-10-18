@@ -1,7 +1,7 @@
 import type { UpdateHandler } from "../types.js";
 import type { GroupChatContext, ProcessingAction } from "../types.js";
 import { ensureActions, isGroupChat } from "../utils.js";
-import { logger } from "../../server/utils/logger.js";
+import { logger } from "../../../server/utils/logger.js";
 import { loadBotContent } from "../../content.js";
 
 const content = loadBotContent();
