@@ -184,68 +184,127 @@ postgresql://firewall_user:abc123XYZ456def@dpg-ck7s8d9k8g0s73e4v5g0-a.frankfurt-
 
 ---
 
-## 🔧 مرحله 6: راه‌اندازی Backend با Railway (رایگان)
+## 🔧 مرحله 6: راه‌اندازی Backend در Render
 
-Backend باید روی یک سرور اجرا شود. ساده‌ترین راه: **Railway**
+Backend باید روی یک سرور اجرا شود. در Render از **Web Service** استفاده می‌کنیم.
 
-### گام 6.1: ساخت حساب Railway
-1. به آدرس بروید: https://railway.app
-2. روی "Login with GitHub" کلیک کنید
-3. GitHub خود را وصل کنید
+### گام 6.1: ایجاد Web Service جدید
+1. در Dashboard رندر، روی **"New +"** کلیک کنید
+2. **"Web Service"** را انتخاب کنید
+3. صفحه **"Connect a repository"** باز می‌شود
 
-### گام 6.2: ساخت پروژه جدید
-1. روی "New Project" کلیک کنید
-2. گزینه "Deploy from GitHub repo" را انتخاب کنید
-3. Repository که در مرحله 3 ساختید را انتخاب کنید
-4. روی "Deploy Now" کلیک کنید
+### گام 6.2: اتصال Repository از GitHub
+1. لیست repository های GitHub شما نمایش داده می‌شود
+2. repository ای که در مرحله 3 ساختید را پیدا کنید
+3. روی **"Connect"** کنار نام repository کلیک کنید
 
-### گام 6.3: تنظیم Environment Variables
-1. در صفحه پروژه، به تب "Variables" بروید
-2. این متغیرها را **یکی یکی** اضافه کنید:
+**📸 نکته:** اگر repository را نمی‌بینید:
+- روی **"Configure account"** کلیک کنید
+- دسترسی Render به repository مورد نظر را تایید کنید
 
-```
-BOT_TOKEN = [TOKEN از مرحله 1]
-BOT_OWNER_ID = [User ID از مرحله 2]
-BOT_USERNAME = [Username ربات شما بدون @]
-DATABASE_URL = [Connection String از مرحله 5]
-BOT_START_MODE = webhook
-PORT = 3000
-```
+### گام 6.3: پیکربندی Web Service
 
-**مثال واقعی:**
-```
+یک فرم با فیلدهای زیر نمایش داده می‌شود:
+
+| فیلد | مقدار |
+|------|-------|
+| **Name** | `firewall-bot-backend` (یا نام دلخواه) |
+| **Region** | همان Region دیتابیس (مثلاً `Frankfurt`) |
+| **Branch** | `main` (یا `master` - branch اصلی شما) |
+| **Root Directory** | خالی بگذارید |
+| **Runtime** | **Node** |
+| **Build Command** | `npm install && npm run migrate:deploy && npx prisma generate` |
+| **Start Command** | `npm run bot:webhook` |
+| **Plan** | **Free** (رایگان) |
+
+**⚠️ نکته مهم:** Build Command باید دقیقاً همین باشد تا:
+- Dependencies نصب شوند
+- Database migrations اجرا شوند  
+- Prisma Client تولید شود
+
+### گام 6.4: تنظیم Environment Variables
+
+قبل از Create کردن، به پایین صفحه بروید و **"Advanced"** را باز کنید.
+
+در قسمت **Environment Variables**، این متغیرها را **یکی یکی** اضافه کنید:
+
+#### متغیرهای ضروری:
+
+```bash
+# 1. توکن ربات (از مرحله 1)
 BOT_TOKEN = 7879361823:AAGqYsVH87CKtQAMaPZGwdQ0Tcw09Bs-C4U
+
+# 2. شناسه مالک (از مرحله 2)
 BOT_OWNER_ID = 5076130392
+
+# 3. یوزرنیم ربات (بدون @)
 BOT_USERNAME = MyFirewallTestBot
-DATABASE_URL = postgresql://alex:abc123xyz@ep-cool-waterfall-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+
+# 4. آدرس دیتابیس (از مرحله 5)
+DATABASE_URL = postgresql://firewall_user:abc123XYZ456def@dpg-xxx.frankfurt-postgres.render.com/firewall_bot
+
+# 5. حالت اجرای ربات
 BOT_START_MODE = webhook
+
+# 6. پورت سرور
 PORT = 3000
 ```
 
-### گام 6.4: دریافت URL Backend
-1. پس از Deploy، Railway یک URL به شما می‌دهد
-2. مثال: `https://telegram-firewall-bot-production.up.railway.app`
-3. این URL را کپی کنید
+**🔴 توجه:** مقادیر بالا فقط مثال هستند! از مقادیر واقعی خودتان استفاده کنید.
 
-### گام 6.5: تنظیم WEBHOOK_DOMAIN
-1. برگردید به Variables
-2. یک متغیر دیگر اضافه کنید:
+### گام 6.5: ایجاد و Deploy
 
+1. روی **"Create Web Service"** کلیک کنید
+2. Render شروع به Build و Deploy می‌کند
+3. این فرآیند 3-5 دقیقه طول می‌کشد
+
+**📊 در این مدت می‌توانید:**
+- Logs را در تب **"Logs"** دنبال کنید
+- وضعیت Build را ببینید
+
+### گام 6.6: دریافت URL Backend
+
+پس از Deploy موفق:
+
+1. در بالای صفحه، یک URL نمایش داده می‌شود:
 ```
-WEBHOOK_DOMAIN = [URL Railway شما]
+https://firewall-bot-backend.onrender.com
 ```
 
-مثال:
-```
-WEBHOOK_DOMAIN = https://telegram-firewall-bot-production.up.railway.app
+2. این URL را کپی کنید
+
+**🔴 مهم: این URL را نگه دارید - در مرحله بعد به آن نیاز دارید!**
+
+### گام 6.7: تنظیم WEBHOOK_DOMAIN
+
+حالا باید URL را به عنوان متغیر محیطی اضافه کنیم:
+
+1. در صفحه Web Service، به تب **"Environment"** بروید
+2. روی **"Add Environment Variable"** کلیک کنید
+3. یک متغیر جدید اضافه کنید:
+
+```bash
+WEBHOOK_DOMAIN = https://firewall-bot-backend.onrender.com
 ```
 
-### گام 6.6: اجرای Database Migrations
-1. در Railway، به تب "Deployments" بروید
-2. روی "View Logs" کلیک کنید
-3. اگر خطایی دیدید که می‌گوید "table does not exist"، نگران نباشید
+4. روی **"Save Changes"** کلیک کنید
+5. Render خودکار redeploy می‌کند (1-2 دقیقه)
 
-**راه حل:** باید migrations را اجرا کنیم
+### گام 6.8: بررسی وضعیت Backend
+
+برای اطمینان از اینکه Backend کار می‌کند:
+
+1. در مرورگر به این آدرس بروید:
+```
+https://firewall-bot-backend.onrender.com/healthz
+```
+
+2. اگر همه چیز درست باشد، پاسخ زیر را می‌بینید:
+```json
+{"status":"ok"}
+```
+
+**✅ Backend شما آماده است!**
 
 ---
 
