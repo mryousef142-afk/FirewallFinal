@@ -472,35 +472,40 @@ https://firewall-bot-miniapp.onrender.com
 
 ---
 
-## 🔗 مرحله 10: اتصال Mini App به ربات
+## 🔗 مرحله 10: اتصال Mini App به Backend
 
-### گام 10.1: تنظیم MINI_APP_URL در Railway
-1. برگردید به Railway
-2. به Variables بروید
-3. یک متغیر جدید اضافه کنید:
+حالا باید Backend را مطلع کنیم که Mini App کجاست.
 
+### گام 10.1: تنظیم MINI_APP_URL در Backend
+
+1. به صفحه **Web Service** (Backend) در Render برگردید
+2. به تب **"Environment"** بروید
+3. روی **"Add Environment Variable"** کلیک کنید
+4. متغیر جدید اضافه کنید:
+
+```bash
+MINI_APP_URL = https://firewall-bot-miniapp.onrender.com
 ```
-MINI_APP_URL = [Worker URL شما]
-```
 
-مثال:
-```
-MINI_APP_URL = https://tg-firewall-worker.username.workers.dev
-```
+**🔴 توجه:** از URL دقیق Static Site خود استفاده کنید!
 
-4. ذخیره کنید
-5. Railway خودکار redeploy می‌کند
+5. روی **"Save Changes"** کلیک کنید
+6. Render خودکار Backend را redeploy می‌کند (1-2 دقیقه)
 
-### گام 10.2: تنظیم Menu Button در BotFather
-1. به `@BotFather` در تلگرام بروید
-2. دستور `/mybots` را بفرستید
-3. ربات خود را انتخاب کنید
-4. "Bot Settings" → "Menu Button" → "Configure Menu Button"
-5. URL Mini App خود را وارد کنید:
-   ```
-   https://tg-firewall-worker.username.workers.dev
-   ```
-6. "Send" را بزنید
+### گام 10.2: بررسی متغیرهای محیطی
+
+در این مرحله، Backend شما باید این متغیرها را داشته باشد:
+
+```bash
+✅ BOT_TOKEN
+✅ BOT_OWNER_ID
+✅ BOT_USERNAME
+✅ DATABASE_URL
+✅ BOT_START_MODE = webhook
+✅ PORT = 3000
+✅ WEBHOOK_DOMAIN = https://firewall-bot-backend.onrender.com
+✅ MINI_APP_URL = https://firewall-bot-miniapp.onrender.com
+```
 
 ---
 
