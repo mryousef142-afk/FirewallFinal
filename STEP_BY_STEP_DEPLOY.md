@@ -392,54 +392,83 @@ npx prisma generate
 
 ---
 
-## 🌐 مرحله 9: Deploy Mini App در Cloudflare Workers
+## 🌐 مرحله 9: Deploy کردن Mini App در Render (Static Site)
 
-### گام 9.1: نصب Wrangler CLI
+Mini App یک وب اپلیکیشن React است که باید به صورت Static Site منتشر شود.
+
+### گام 9.1: ایجاد Static Site جدید
+
+1. در Dashboard رندر، روی **"New +"** کلیک کنید
+2. **"Static Site"** را انتخاب کنید
+3. همان repository را که قبلاً وصل کردید، انتخاب کنید
+4. روی **"Connect"** کلیک کنید
+
+### گام 9.2: پیکربندی Static Site
+
+| فیلد | مقدار |
+|------|-------|
+| **Name** | `firewall-bot-miniapp` (یا نام دلخواه) |
+| **Branch** | `main` (یا `master`) |
+| **Root Directory** | خالی بگذارید |
+| **Build Command** | `npm install && npm run build` |
+| **Publish Directory** | `dist` |
+
+### گام 9.3: تنظیم Environment Variables برای Build
+
+در قسمت **"Advanced"** > **"Environment Variables"**:
+
+**🔴 مهم:** این متغیر برای Build Time است:
+
 ```bash
-npm install -g wrangler
+# URL Backend که در مرحله 6 دریافت کردید
+VITE_API_BASE_URL = https://firewall-bot-backend.onrender.com/api/v1
 ```
 
-### گام 9.2: Login به Cloudflare
-```bash
-wrangler login
-```
+**توضیح:** 
+- Vite از متغیرهای محیطی با پیشوند `VITE_` استفاده می‌کند
+- این URL برای ارتباط Mini App با Backend استفاده می‌شود
 
-یک صفحه مرورگر باز می‌شود، "Allow" را بزنید.
+### گام 9.4: ویرایش فایل wrangler.toml (اختیاری)
 
-### گام 9.3: ویرایش wrangler.toml
-1. فایل `wrangler.toml` را باز کنید
-2. خط مربوط به `BACKEND_URL` را پیدا کنید:
+**⚠️ توجه:** چون دیگر از Cloudflare Worker استفاده نمی‌کنیم، این فایل را می‌توانید نادیده بگیرید یا حذف کنید.
+
+اگر می‌خواهید فایل را نگه دارید (برای مرجع)، محتوای آن را به این شکل تغییر دهید:
 
 ```toml
-[vars]
-BACKEND_URL = "https://your-backend-server.com"
+# این فایل دیگر استفاده نمی‌شود
+# پروژه روی Render.com deploy شده است
+# 
+# name = "tg-firewall-worker"
+# main = "worker/index.ts"
+# compatibility_date = "2025-01-12"
 ```
 
-3. آن را به URL Railway خود تغییر دهید:
+### گام 9.5: ایجاد Static Site
 
-```toml
-[vars]
-BACKEND_URL = "https://telegram-firewall-bot-production.up.railway.app"
+1. روی **"Create Static Site"** کلیک کنید
+2. Render شروع به Build می‌کند (3-5 دقیقه)
+3. منتظر بمانید تا Deploy کامل شود
+
+### گام 9.6: دریافت URL Mini App
+
+پس از Deploy موفق:
+
+1. در بالای صفحه، URL را می‌بینید:
+```
+https://firewall-bot-miniapp.onrender.com
 ```
 
-### گام 9.4: Build و Deploy
-```bash
-# Build
-npm run build
+2. این URL را کپی کنید
 
-# Deploy
-npm run worker:deploy
-```
+**🔴 مهم: این URL Mini App شما است!**
 
-### گام 9.5: دریافت Worker URL
-پس از deploy موفق، یک URL دریافت می‌کنید:
+### گام 9.7: تست Mini App
 
-```
-Published tg-firewall-worker
-  https://tg-firewall-worker.[your-subdomain].workers.dev
-```
+1. URL را در مرورگر باز کنید
+2. باید صفحه Mini App را ببینید
+3. اگر خطای API دریافت کردید، نگران نباشید - در مرحله بعد درست می‌شود
 
-این URL را کپی کنید!
+**✅ Mini App شما Deploy شد!**
 
 ---
 
