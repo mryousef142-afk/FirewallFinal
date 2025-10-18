@@ -590,26 +590,303 @@ Success! Menu button URL updated.
 
 ---
 
-## 🆘 مشکل دارید?
+## 🆘 عیب‌یابی: راهنمای حل مشکلات رایج
 
-### مشکل 1: ربات پاسخ نمی‌دهد
-**راه حل:**
-1. به Railway بروید
-2. Logs را چک کنید
-3. اگر خطای "DATABASE" دیدید، migrations را دوباره اجرا کنید
+### ❌ مشکل 1: ربات پاسخ نمی‌دهد
 
-### مشکل 2: Mini App باز نمی‌شود
-**راه حل:**
-1. چک کنید `MINI_APP_URL` درست است
-2. Railway را restart کنید
-3. Menu Button در BotFather را دوباره تنظیم کنید
+**علائم:**
+- وقتی `/start` می‌زنید، ربات جواب نمی‌دهد
+- ربات offline به نظر می‌رسد
 
-### مشکل 3: Webhook Error
-**راه حل:**
-این دستور را در Terminal اجرا کنید:
-```bash
-curl "https://api.telegram.org/bot[YOUR_TOKEN]/setWebhook?url=https://[RAILWAY_URL]/telegram/webhook"
+**راه حل‌ها:**
+
+**گام 1: بررسی Logs Backend**
+1. به Dashboard رندر بروید
+2. به صفحه **Web Service** (Backend) بروید
+3. تب **"Logs"** را باز کنید
+4. دنبال خطاها باشید
+
+**خطاهای رایج:**
+
 ```
+Error: DATABASE_URL is not defined
+```
+**حل:** متغیر `DATABASE_URL` را در Environment Variables اضافه کنید.
+
+```
+Error: connect ECONNREFUSED
+```
+**حل:** چک کنید دیتابیس Available است (در صفحه PostgreSQL).
+
+```
+Error: relation "User" does not exist
+```
+**حل:** Migrations اجرا نشده‌اند. به مرحله 7 برگردید.
+
+**گام 2: Redeploy کردن**
+1. در صفحه Web Service، به تب **"Manual Deploy"** بروید
+2. روی **"Deploy latest commit"** کلیک کنید
+3. منتظر بمانید تا Deploy کامل شود
+
+**گام 3: بررسی Webhook**
+1. این دستور را در Terminal اجرا کنید:
+```bash
+curl "https://api.telegram.org/bot[YOUR_BOT_TOKEN]/getWebhookInfo"
+```
+
+2. خروجی باید این باشد:
+```json
+{
+  "ok": true,
+  "result": {
+    "url": "https://firewall-bot-backend.onrender.com/telegram/webhook",
+    "has_custom_certificate": false,
+    "pending_update_count": 0
+  }
+}
+```
+
+3. اگر URL غلط بود، آن را ست کنید:
+```bash
+curl "https://api.telegram.org/bot[YOUR_BOT_TOKEN]/setWebhook?url=https://[YOUR_RENDER_URL]/telegram/webhook"
+```
+
+---
+
+### ❌ مشکل 2: Mini App باز نمی‌شود
+
+**علائم:**
+- روی دکمه Menu یا Management Panel کلیک می‌کنید ولی هیچ اتفاقی نمی‌افتد
+- Mini App یک صفحه خالی نمایش می‌دهد
+
+**راه حل‌ها:**
+
+**گام 1: بررسی URL در BotFather**
+1. به `@BotFather` بروید
+2. `/mybots` بزنید
+3. ربات خود → Bot Settings → Menu Button
+4. چک کنید URL درست است:
+```
+https://firewall-bot-miniapp.onrender.com
+```
+
+**گام 2: بررسی MINI_APP_URL در Backend**
+1. به صفحه Web Service بروید
+2. تب **"Environment"** → چک کنید `MINI_APP_URL` درست است
+
+**گام 3: بررسی Static Site**
+1. به صفحه **Static Site** بروید
+2. مطمئن شوید وضعیت **"Live"** است
+3. URL را در مرورگر باز کنید - باید صفحه Mini App را ببینید
+
+**گام 4: Rebuild Static Site**
+1. در صفحه Static Site، به **"Manual Deploy"** بروید
+2. روی **"Clear build cache & deploy"** کلیک کنید
+
+---
+
+### ❌ مشکل 3: خطای Database Connection
+
+**علائم:**
+```
+Error: Can't reach database server
+Error: Connection timeout
+```
+
+**راه حل‌ها:**
+
+**گام 1: چک کردن وضعیت Database**
+1. به صفحه **PostgreSQL** در رندر بروید
+2. مطمئن شوید Status = **"Available"** است
+3. اگر Suspended است، روی **"Resume"** کلیک کنید
+
+**گام 2: بررسی Connection String**
+1. در صفحه PostgreSQL، Connection String را دوباره کپی کنید
+2. به صفحه Web Service بروید
+3. `DATABASE_URL` را Update کنید
+
+**گام 3: اجرای Migrations دوباره**
+1. در صفحه Web Service، تب **"Shell"** را باز کنید
+2. این دستورات را اجرا کنید:
+```bash
+npm run migrate:deploy
+npx prisma generate
+```
+
+---
+
+### ❌ مشکل 4: Mini App خطای API می‌دهد
+
+**علائم:**
+- Mini App باز می‌شود ولی داده‌ای نمایش نمی‌دهد
+- در Console مرورگر خطای 404 یا 500 می‌بینید
+
+**راه حل‌ها:**
+
+**گام 1: بررسی VITE_API_BASE_URL**
+1. به صفحه **Static Site** بروید
+2. تب **"Environment"** را باز کنید
+3. چک کنید `VITE_API_BASE_URL` درست است:
+```
+https://firewall-bot-backend.onrender.com/api/v1
+```
+
+4. اگر تغییر دادید، Rebuild کنید
+
+**گام 2: تست Backend API**
+1. در مرورگر به این آدرس بروید:
+```
+https://firewall-bot-backend.onrender.com/healthz
+```
+
+2. باید جواب بگیرید:
+```json
+{"status":"ok"}
+```
+
+3. اگر خطا دیدید، به لاگ‌های Backend نگاه کنید
+
+---
+
+### ❌ مشکل 5: Free Plan Sleeping
+
+**علائم:**
+- ربات بعد از مدتی پاسخ نمی‌دهد
+- اولین درخواست بعد از مدتی 30-60 ثانیه طول می‌کشد
+
+**توضیح:**
+پلن رایگان Render بعد از 15 دقیقه بی‌استفاده، سرویس را **Sleep** می‌کند.
+
+**راه حل‌های موقت:**
+
+**راه حل 1: Health Check خودکار (UptimeRobot)**
+1. به https://uptimerobot.com بروید
+2. یک Monitor جدید بسازید:
+   - Type: HTTP(s)
+   - URL: `https://firewall-bot-backend.onrender.com/healthz`
+   - Interval: 5 دقیقه
+3. این کار Backend را بیدار نگه می‌دارد
+
+**راه حل 2: Upgrade به Paid Plan**
+- پلن Starter: $7/ماه
+- سرویس همیشه بیدار می‌ماند
+- منابع بیشتر
+
+---
+
+### ❌ مشکل 6: Build Failed
+
+**علائم:**
+```
+Build failed with exit code 1
+npm ERR! Missing script: "build"
+```
+
+**راه حل‌ها:**
+
+**برای Web Service (Backend):**
+- Build Command باید باشد:
+```
+npm install && npm run migrate:deploy && npx prisma generate
+```
+
+**برای Static Site (Mini App):**
+- Build Command باید باشد:
+```
+npm install && npm run build
+```
+
+- Publish Directory باید باشد:
+```
+dist
+```
+
+---
+
+### ❌ مشکل 7: Environment Variables کار نمی‌کنند
+
+**راه حل:**
+
+1. **Backend (Web Service):**
+   - متغیرها را در تب **Environment** اضافه کنید
+   - بعد از هر تغییر، **Save Changes** را بزنید
+   - Render خودکار redeploy می‌کند
+
+2. **Mini App (Static Site):**
+   - متغیرها باید با `VITE_` شروع شوند
+   - مثال: `VITE_API_BASE_URL`
+   - بعد از تغییر، حتماً **Rebuild** کنید
+
+---
+
+### ❌ مشکل 8: Deploy می‌شود ولی کار نمی‌کند
+
+**چک‌لیست کامل:**
+
+```
+✅ 1. PostgreSQL: Status = Available
+✅ 2. Web Service: Status = Live  
+✅ 3. Static Site: Status = Live
+✅ 4. همه Environment Variables درست هستند
+✅ 5. Build Commands درست هستند
+✅ 6. Logs هیچ خطایی ندارند
+✅ 7. /healthz پاسخ می‌دهد
+✅ 8. Webhook درست تنظیم شده
+✅ 9. Menu Button در BotFather درست است
+✅ 10. Database Migrations اجرا شده‌اند
+```
+
+---
+
+### 🔍 دستورات مفید برای Debug
+
+**1. بررسی Webhook:**
+```bash
+curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
+```
+
+**2. تنظیم Webhook:**
+```bash
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=<BACKEND_URL>/telegram/webhook"
+```
+
+**3. پاک کردن Webhook:**
+```bash
+curl "https://api.telegram.org/bot<TOKEN>/deleteWebhook"
+```
+
+**4. تست Backend Health:**
+```bash
+curl https://firewall-bot-backend.onrender.com/healthz
+```
+
+**5. تست Database Connection از Local:**
+```bash
+psql "postgresql://user:pass@host/database"
+```
+
+---
+
+### 📞 کمک بیشتر
+
+اگر همچنان مشکل دارید:
+
+1. **لاگ‌ها را بررسی کنید:**
+   - Backend Logs
+   - Database Logs (در صفحه PostgreSQL → Logs)
+   - Browser Console (F12 در مرورگر)
+
+2. **سرویس‌ها را Restart کنید:**
+   - Web Service: Manual Deploy → Deploy latest commit
+   - Static Site: Manual Deploy → Clear cache & deploy
+   - PostgreSQL: Resume (اگر Suspended است)
+
+3. **Environment Variables را دوباره چک کنید:**
+   - یک به یک همه متغیرها را بررسی کنید
+   - مطمئن شوید هیچ فاصله یا کاراکتر اضافی ندارند
+
+4. **از مستندات Render کمک بگیرید:**
+   - https://render.com/docs
 
 ---
 
