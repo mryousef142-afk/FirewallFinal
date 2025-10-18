@@ -2,7 +2,7 @@ import type { UpdateHandler } from "../types.js";
 import { ensureActions, isGroupChat } from "../utils.js";
 import type { GroupChatContext } from "../types.js";
 import { runFirewall } from "../firewallEngine.js";
-import { logger } from "../../server/utils/logger.js";
+import { logger } from "../../../server/utils/logger.js";
 
 function isTextMessage(ctx: GroupChatContext): boolean {
   return Boolean(ctx.message && "text" in ctx.message && typeof ctx.message.text === "string");
