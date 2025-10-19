@@ -309,7 +309,7 @@ const TEXT = {
   copyReferral: "Copy invite link",
   logReferral: "Log referral",
   storeTitle: "XP Marketplace",
-  storeSubtitle: "Spend your XP on credits, Stars, and cosmetics.",
+  storeSubtitle: "Spend your XP on free credits and exclusive badges.",
   storeRedeemLabel: "Redeem",
   storeRedeem: (title: string) => `Redeemed ${title}!`,
   storeInsufficient: "Not enough XP to redeem that reward yet.",
