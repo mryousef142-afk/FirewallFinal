@@ -96,7 +96,7 @@ const MISSIONS: Record<MissionCategory, Mission[]> = {
       id: "welcome-newcomers",
       title: "Welcome new members",
       description: "Greet newcomers with a friendly message and pin the rules.",
-      xp: 15,
+      xp: 25,
       icon: "chat",
     },
   ],
