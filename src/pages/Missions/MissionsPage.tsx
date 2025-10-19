@@ -89,7 +89,7 @@ const MISSIONS: Record<MissionCategory, Mission[]> = {
       id: "share-tip",
       title: "Share a safety tip",
       description: "Post a short reminder in your main group about staying secure.",
-      xp: 12,
+      xp: 25,
       icon: "broadcast",
     },
     {
