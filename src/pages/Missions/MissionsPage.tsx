@@ -82,7 +82,7 @@ const MISSIONS: Record<MissionCategory, Mission[]> = {
       id: "review-log",
       title: "Review the activity log",
       description: "Scan today’s joins and leaves for anything suspicious.",
-      xp: 12,
+      xp: 20,
       icon: "insight",
     },
     {
