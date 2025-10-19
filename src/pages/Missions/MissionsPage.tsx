@@ -75,7 +75,7 @@ const MISSIONS: Record<MissionCategory, Mission[]> = {
       id: "check-in",
       title: "Check in today",
       description: "Open Firewall once to refresh statistics and keep your streak alive.",
-      xp: 10,
+      xp: 20,
       icon: "check",
     },
     {
