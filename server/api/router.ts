@@ -24,6 +24,7 @@ export function createApiRouter(options: ApiRouterOptions): Router {
   router.use("/groups", createGroupsRouter());
   router.use("/stars", createStarsRouter({ ownerTelegramId: options.ownerTelegramId }));
   router.use("/firewall", createFirewallRouter());
+  router.use("/missions", createMissionsRouter());
 
   return router;
 }
