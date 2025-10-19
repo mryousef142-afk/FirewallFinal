@@ -762,11 +762,8 @@ ${dailyTaskChannel.channelLink}`,
           </div>
           <code className={styles.referralLink}>{referralLink}</code>
           <div className={styles.referralActions}>
-            <Button mode="plain" size="s" onClick={handleCopyReferral}>
+            <Button mode="filled" size="s" onClick={handleCopyReferral}>
               {TEXT.copyReferral}
-            </Button>
-            <Button mode="filled" size="s" onClick={handleLogReferral}>
-              {`${TEXT.logReferral} (+${REFERRAL_XP} XP)`}
             </Button>
           </div>
         </Card>
