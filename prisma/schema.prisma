@@ -209,3 +209,87 @@ model PanelBan {
 
   @@index([telegramId])
 }
+
+model ChannelMission {
+  id          String   @id @default(uuid())
+  channelLink String
+  buttonLabel String
+  description String
+  xpReward    Int      @default(30)
+  isActive    Boolean  @default(true)
+  category    String   @default("general") // daily, weekly, monthly, general
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?
+
+  @@index([isActive, category])
+}
+
+model UserMissionProgress {
+  id          String   @id @default(uuid())
+  userId      String
+  missionId   String
+  missionType String // daily, weekly, monthly, general, channel
+  category    String
+  completedAt DateTime @default(now())
+  xpEarned    Int
+
+  @@unique([userId, missionId, missionType])
+  @@index([userId, category])
+  @@index([completedAt])
+}
+
+model UserReferral {
+  id            String   @id @default(uuid())
+  referrerId    String // User who shared the link
+  referredId    String // New user who joined
+  referralCode  String
+  isActive      Boolean  @default(false) // Becomes true when referred user adds first group
+  xpAwarded     Int      @default(0)
+  createdAt     DateTime @default(now())
+  activatedAt   DateTime?
+
+  @@unique([referrerId, referredId])
+  @@index([referrerId])
+  @@index([referredId])
+  @@index([isActive])
+}
+
+model UserXPBalance {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  totalXp         Int      @default(0)
+  level           Int      @default(1)
+  streak          Int      @default(0)
+  lastActiveDate  DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([level])
+}
+
+model BadgePurchase {
+  id          String   @id @default(uuid())
+  userId      String
+  badgeId     String // rookie, active, master, elite, legend
+  badgeName   String
+  xpCost      Int
+  purchasedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+}
+
+model CreditRedemption {
+  id          String   @id @default(uuid())
+  userId      String
+  groupId     String?
+  days        Int // 7, 14, or 30
+  xpCost      Int
+  redeemedAt  DateTime @default(now())
+  appliedAt   DateTime?
+
+  @@index([userId])
+  @@index([groupId])
+}
