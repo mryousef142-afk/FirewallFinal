@@ -65,6 +65,10 @@ type ReferralStats = {
 
 const LEVEL_THRESHOLDS = [0, 250, 600, 1050, 1600, 2200, 2850, 3550, 4300, 5100, 5950, 6850];
 
+const DAILY_COMPLETION_BONUS = 150;
+const WEEKLY_COMPLETION_BONUS = 400;
+const MONTHLY_COMPLETION_BONUS = 1000;
+
 const MISSIONS: Record<MissionCategory, Mission[]> = {
   daily: [
     {
