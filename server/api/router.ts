@@ -2,6 +2,7 @@ import { Router } from "express";
 import { createGroupsRouter } from "./routes/groups.js";
 import { createStarsRouter } from "./routes/stars.js";
 import { createFirewallRouter } from "./routes/firewall.js";
+import { createMissionsRouter } from "./routes/missions.js";
 import { requireTelegramInitData } from "./middleware/telegramInit.js";
 
 type ApiRouterOptions = {
