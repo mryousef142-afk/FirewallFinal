@@ -506,7 +506,29 @@ ${dailyTaskChannel.channelLink}`,
     }
 
     const previousLevel = levelInfo.level;
-    const nextXp = xp + mission.xp;
+    let bonusXp = 0;
+    let bonusMessage = '';
+
+    // Check if this completes all missions in the category
+    const currentCategoryMissions = missionsByCategory[category];
+    const newCompletedCount = completion[category].size + 1;
+    const totalMissions = currentCategoryMissions.length;
+
+    if (newCompletedCount === totalMissions) {
+      // All missions completed! Award bonus
+      if (category === 'daily') {
+        bonusXp = DAILY_COMPLETION_BONUS;
+        bonusMessage = `🎉 Daily missions completed! +${DAILY_COMPLETION_BONUS} bonus XP!`;
+      } else if (category === 'weekly') {
+        bonusXp = WEEKLY_COMPLETION_BONUS;
+        bonusMessage = `🎉 Weekly missions completed! +${WEEKLY_COMPLETION_BONUS} bonus XP!`;
+      } else if (category === 'monthly') {
+        bonusXp = MONTHLY_COMPLETION_BONUS;
+        bonusMessage = `🎉 Monthly missions completed! +${MONTHLY_COMPLETION_BONUS} bonus XP!`;
+      }
+    }
+
+    const nextXp = xp + mission.xp + bonusXp;
     const nextLevelInfo = computeLevel(nextXp);
 
     setCompletion((prev) => {
@@ -519,7 +541,15 @@ ${dailyTaskChannel.channelLink}`,
     });
 
     setXp(nextXp);
-    setSnackbar(nextLevelInfo.level > previousLevel ? TEXT.toastLevelUp(nextLevelInfo.level) : TEXT.toast(mission));
+
+    // Show appropriate message
+    if (nextLevelInfo.level > previousLevel) {
+      setSnackbar(TEXT.toastLevelUp(nextLevelInfo.level));
+    } else if (bonusMessage) {
+      setSnackbar(bonusMessage);
+    } else {
+      setSnackbar(TEXT.toast(mission));
+    }
   };
 
   return (
