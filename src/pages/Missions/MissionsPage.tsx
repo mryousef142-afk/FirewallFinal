@@ -314,7 +314,7 @@ const TEXT = {
   storeRedeem: (title: string) => `Redeemed ${title}!`,
   storeInsufficient: "Not enough XP to redeem that reward yet.",
   referralTitle: "Referral booster",
-  referralSubtitle: "Share your invite link to earn XP whenever a new team joins.",
+  referralSubtitle: "Share your invite link and earn XP automatically when new teams join and add their first group.",
   referralCopied: "Referral link copied to clipboard.",
   referralLogged: (xp: number) => `+${xp} XP from a new referral.`,
   referralInvites: (count: number) => `${count} referral${count === 1 ? "" : "s"} logged`,
